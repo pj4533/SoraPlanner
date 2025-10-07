@@ -125,15 +125,22 @@ struct VideoLibraryRow: View {
 
                 Spacer()
 
-                // Delete Button
-                Button(action: {
-                    showDeleteConfirmation = true
-                }) {
-                    Image(systemName: "trash")
+                // Delete Button or Progress Indicator
+                if viewModel.deletingVideoIds.contains(video.id) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
                         .foregroundColor(.red)
+                        .rotationEffect(.degrees(360))
+                        .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: viewModel.deletingVideoIds.contains(video.id))
+                } else {
+                    Button(action: {
+                        showDeleteConfirmation = true
+                    }) {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Delete video")
                 }
-                .buttonStyle(.plain)
-                .help("Delete video")
 
                 // Video ID
                 Text("ID: \(video.id)")
