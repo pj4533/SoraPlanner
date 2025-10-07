@@ -62,6 +62,24 @@ class VideoGenerationViewModel: ObservableObject {
 
     // MARK: - Public Methods
 
+    /// Retry initializing the API service (e.g., after user adds API key)
+    func retryAPIServiceInitialization() {
+        guard apiService == nil else {
+            // Already initialized
+            return
+        }
+
+        SoraPlannerLoggers.ui.info("Retrying API service initialization")
+        do {
+            self.apiService = try VideoAPIService()
+            self.errorMessage = nil
+            SoraPlannerLoggers.ui.info("API service initialization successful")
+        } catch {
+            SoraPlannerLoggers.ui.error("Failed to initialize API service: \(error.localizedDescription)")
+            self.errorMessage = error.localizedDescription
+        }
+    }
+
     /// Start video generation process
     func generateVideo() async {
         guard canGenerate else {

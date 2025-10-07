@@ -19,7 +19,7 @@ enum VideoAPIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingAPIKey:
-            return "OPENAI_API_KEY environment variable not set"
+            return "No API key configured. Please add your OpenAI API key in the Settings tab."
         case .invalidURL:
             return "Invalid API URL"
         case .invalidResponse:
@@ -40,12 +40,20 @@ class VideoAPIService {
     private let apiKey: String
 
     init() throws {
-        guard let key = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !key.isEmpty else {
-            SoraPlannerLoggers.api.error("OPENAI_API_KEY environment variable not found")
+        // Check keychain first (preferred method)
+        if let key = KeychainService.shared.retrieveAPIKey(), !key.isEmpty {
+            self.apiKey = key
+            SoraPlannerLoggers.api.info("VideoAPIService initialized with API key from keychain")
+        }
+        // Fall back to environment variable (for backward compatibility)
+        else if let key = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !key.isEmpty {
+            self.apiKey = key
+            SoraPlannerLoggers.api.info("VideoAPIService initialized with API key from environment variable")
+        }
+        else {
+            SoraPlannerLoggers.api.error("No API key found in keychain or environment variables")
             throw VideoAPIError.missingAPIKey
         }
-        self.apiKey = key
-        SoraPlannerLoggers.api.info("VideoAPIService initialized")
     }
 
     /// Create a new video generation job

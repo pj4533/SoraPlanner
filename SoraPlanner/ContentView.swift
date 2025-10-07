@@ -21,6 +21,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("Library", systemImage: "video.stack")
                 }
+
+            ConfigurationView()
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                }
         }
         .frame(minWidth: 650, minHeight: 750)
         .environmentObject(playerCoordinator)

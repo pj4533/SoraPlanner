@@ -182,6 +182,10 @@ struct VideoGenerationView: View {
             }
         }
         .frame(minWidth: 600, minHeight: 700)
+        .onAppear {
+            // Retry API service initialization in case user just added API key in Settings
+            viewModel.retryAPIServiceInitialization()
+        }
     }
 }
 

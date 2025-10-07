@@ -12,6 +12,7 @@ enum LogSubsystem: String {
     case ui = "ui"
     case video = "video"
     case networking = "networking"
+    case keychain = "keychain"
 
     var logger: Logger {
         Logger(subsystem: "com.yourorg.SoraPlanner", category: self.rawValue)
@@ -23,4 +24,5 @@ struct SoraPlannerLoggers {
     static let ui = LogSubsystem.ui.logger
     static let video = LogSubsystem.video.logger
     static let networking = LogSubsystem.networking.logger
+    static let keychain = LogSubsystem.keychain.logger
 }

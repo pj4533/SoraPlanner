@@ -35,6 +35,14 @@ This application provides a native macOS interface for creating, tracking, and m
 - Shared coordinator pattern for consistent playback across tabs
 - Loading states and error handling
 
+### Configuration & Settings
+- Dedicated settings tab for application configuration
+- Secure API key storage using macOS Keychain Services
+- Password-style masked input for API key entry
+- Visual indicators for key storage status
+- Save, update, and delete API key functionality
+- Backward compatibility with environment variable configuration
+
 ## Technical Stack
 
 - **Platform**: macOS 26.0+
@@ -46,6 +54,7 @@ This application provides a native macOS interface for creating, tracking, and m
 - **Media Playback**: AVKit and AVFoundation
 - **Logging**: Apple's Unified Logging System (os.log)
 - **Networking**: URLSession with async/await
+- **Security**: macOS Keychain Services for secure credential storage
 
 ## API Integration
 
@@ -58,7 +67,7 @@ The application integrates with OpenAI's Video API through a dedicated service l
 - `GET /v1/videos/{video_id}/content` - Download video content (MP4)
 
 **API Features:**
-- Bearer token authentication via OPENAI_API_KEY environment variable
+- Bearer token authentication via secure keychain storage (with environment variable fallback)
 - Comprehensive error handling with typed error cases
 - Automatic retry logic through polling mechanism
 - Detailed request/response logging
@@ -73,7 +82,8 @@ SoraPlanner/
 ├── Models/
 │   └── VideoJob.swift             # Core data models (VideoJob, VideoStatus, VideoError)
 ├── Services/
-│   └── VideoAPIService.swift      # OpenAI Video API client
+│   ├── VideoAPIService.swift      # OpenAI Video API client
+│   └── KeychainService.swift      # Secure keychain storage service
 ├── ViewModels/
 │   ├── VideoGenerationViewModel.swift   # Business logic for video generation
 │   ├── VideoLibraryViewModel.swift      # Business logic for video library
@@ -81,7 +91,8 @@ SoraPlanner/
 ├── Views/
 │   ├── VideoGenerationView.swift  # Video creation interface
 │   ├── VideoLibraryView.swift     # Video list and management interface
-│   └── VideoPlayerView.swift      # Video playback modal
+│   ├── VideoPlayerView.swift      # Video playback modal
+│   └── ConfigurationView.swift    # Settings and configuration interface
 ├── Utilities/
 │   ├── Logging.swift              # Centralized logging configuration
 │   └── DecodingErrorLogger.swift  # JSON decoding error utilities
@@ -107,20 +118,38 @@ internal_docs/                     # API documentation and reference materials
 ### Service Layer
 - `VideoAPIService` encapsulates all API communication
 - Throws typed errors for proper error handling
-- Configured via environment variables for security
+- Configured via keychain-based secure storage with environment variable fallback
+
+### Keychain Service
+- `KeychainService` provides secure storage for sensitive credentials
+- Uses macOS Keychain Services with `.whenUnlocked` accessibility
+- Singleton pattern for consistent access across app
+- Comprehensive error handling for keychain operations
 
 ### Logging Subsystems
 - `api` - API requests, responses, and errors
 - `ui` - User interface events and state changes
 - `video` - Video playback and download operations
 - `networking` - HTTP-level networking details
+- `keychain` - Keychain operations and security events
 
-## Environment Configuration
+## API Key Configuration
 
-**Required Environment Variables:**
-- `OPENAI_API_KEY` - OpenAI API key for authentication (required at runtime)
+The application requires an OpenAI API key for authentication. There are two supported methods:
 
-The application validates the presence of OPENAI_API_KEY on VideoAPIService initialization and provides clear error messages if missing.
+**Preferred Method: Settings Tab (Keychain)**
+- Navigate to the Settings tab in the application
+- Enter your OpenAI API key in the secure field
+- The key is encrypted and stored in macOS Keychain
+- Persists between app launches
+- More secure and user-friendly
+
+**Alternative Method: Environment Variable (Legacy)**
+- Set `OPENAI_API_KEY` environment variable
+- Supported for backward compatibility
+- Keychain storage takes precedence if both are configured
+
+The application checks keychain first, then falls back to environment variable. If neither is found, a user-friendly error directs users to the Settings tab.
 
 ## State Management
 
@@ -163,6 +192,21 @@ The application validates the presence of OPENAI_API_KEY on VideoAPIService init
 ### API Documentation
 - IMPORTANT: Do not modify `/internal_docs/openai_video_api_sora2.md` - this is our only reference copy of the Sora-2 API documentation which is not easily available online.
 - Refer to this file for API contract details, endpoint specifications, and response formats
+
+## Security
+
+### Credential Storage
+- API keys are stored in macOS Keychain using `kSecClassGenericPassword`
+- Accessibility level set to `.whenUnlocked` - keys only accessible when device is unlocked
+- OS-level encryption provided automatically by macOS Keychain Services
+- Keys are never logged or exposed in debug output
+- All keychain operations use proper error handling
+
+### Best Practices
+- Use Settings tab for API key configuration (preferred over environment variables)
+- API keys are transmitted only to OpenAI's API endpoints
+- Password-style masking in UI prevents shoulder-surfing
+- Keychain uses app bundle identifier for service isolation
 
 ## Known Limitations
 
