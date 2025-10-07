@@ -50,8 +50,8 @@ struct VideoGenerationView: View {
                 HStack(spacing: 16) {
                     Picker("Duration", selection: $viewModel.duration) {
                         Text("4 seconds").tag(4)
-                        Text("10 seconds").tag(10)
-                        Text("30 seconds").tag(30)
+                        Text("8 seconds").tag(8)
+                        Text("12 seconds").tag(12)
                     }
                     .pickerStyle(.segmented)
                     .disabled(viewModel.isGenerating)
