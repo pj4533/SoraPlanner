@@ -50,9 +50,8 @@ struct VideoGenerationView: View {
                 HStack(spacing: 16) {
                     Picker("Duration", selection: $viewModel.duration) {
                         Text("4 seconds").tag(4)
-                        Text("6 seconds").tag(6)
-                        Text("8 seconds").tag(8)
                         Text("10 seconds").tag(10)
+                        Text("30 seconds").tag(30)
                     }
                     .pickerStyle(.segmented)
                     .disabled(viewModel.isGenerating)
@@ -60,12 +59,18 @@ struct VideoGenerationView: View {
                     Text("\(viewModel.duration)s")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                        .frame(width: 30)
+                        .frame(width: 35)
                 }
 
-                Text("Select the length of your generated video")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Select the length of your generated video")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Text("Sora-2 model • $0.10 per second")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
             }
             .padding(.horizontal)
 
