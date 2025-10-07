@@ -81,7 +81,7 @@ class VideoAPIService {
                 throw VideoAPIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
             }
 
-            let videoJob = try JSONDecoder().decode(VideoJob.self, from: data)
+            let videoJob = try DecodingLogger.decode(VideoJob.self, from: data, context: "POST /v1/videos")
             SoraPlannerLoggers.api.info("Video job created successfully: \(videoJob.id)")
             return videoJob
 
@@ -123,7 +123,7 @@ class VideoAPIService {
                 throw VideoAPIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
             }
 
-            let videoJob = try JSONDecoder().decode(VideoJob.self, from: data)
+            let videoJob = try DecodingLogger.decode(VideoJob.self, from: data, context: "GET /v1/videos/\(videoId)")
             SoraPlannerLoggers.api.debug("Video status: \(videoJob.status.rawValue), progress: \(videoJob.progress ?? 0)%")
             return videoJob
 
@@ -211,7 +211,7 @@ class VideoAPIService {
                 throw VideoAPIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
             }
 
-            let listResponse = try JSONDecoder().decode(VideoListResponse.self, from: data)
+            let listResponse = try DecodingLogger.decode(VideoListResponse.self, from: data, context: "GET /v1/videos")
             SoraPlannerLoggers.api.info("Retrieved \(listResponse.data.count) videos")
             return listResponse.data
 
