@@ -129,7 +129,7 @@ struct VideoLibraryRow: View {
             }
 
             // Video Details
-            if video.status == .processing, let progress = video.progress {
+            if video.status == .inProgress, let progress = video.progress {
                 ProgressView(value: Double(progress), total: 100.0)
                     .frame(height: 4)
                 Text("\(progress)% complete")

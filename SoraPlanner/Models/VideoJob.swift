@@ -10,7 +10,7 @@ import Foundation
 /// Current lifecycle status of a video job
 enum VideoStatus: String, Codable {
     case queued
-    case processing
+    case inProgress = "in_progress"
     case completed
     case failed
 }

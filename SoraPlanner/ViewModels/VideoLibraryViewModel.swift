@@ -68,7 +68,7 @@ class VideoLibraryViewModel: ObservableObject {
         switch video.status {
         case .queued:
             return "Queued"
-        case .processing:
+        case .inProgress:
             if let progress = video.progress {
                 return "Processing: \(progress)%"
             }
@@ -85,7 +85,7 @@ class VideoLibraryViewModel: ObservableObject {
         switch video.status {
         case .queued:
             return "blue"
-        case .processing:
+        case .inProgress:
             return "orange"
         case .completed:
             return "green"

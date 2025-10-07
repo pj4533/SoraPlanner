@@ -33,7 +33,7 @@ class VideoGenerationViewModel: ObservableObject {
         switch job.status {
         case .queued:
             return "Queued for generation..."
-        case .processing:
+        case .inProgress:
             if let progress = job.progress {
                 return "Processing: \(progress)%"
             }
@@ -141,7 +141,7 @@ class VideoGenerationViewModel: ObservableObject {
                         isGenerating = false
                         return
 
-                    case .queued, .processing:
+                    case .queued, .inProgress:
                         // Continue polling
                         SoraPlannerLoggers.ui.debug("Video status: \(updatedJob.status.rawValue)")
                     }
