@@ -65,9 +65,9 @@ class VideoAPIService {
         let requestBody = CreateVideoRequest(prompt: prompt, seconds: seconds)
         request.httpBody = try JSONEncoder().encode(requestBody)
 
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
 
+        do {
             guard let httpResponse = response as? HTTPURLResponse else {
                 SoraPlannerLoggers.api.error("Invalid response type")
                 throw VideoAPIError.invalidResponse
@@ -88,7 +88,7 @@ class VideoAPIService {
         } catch let error as VideoAPIError {
             throw error
         } catch let error as DecodingError {
-            SoraPlannerLoggers.api.error("Failed to decode response: \(error.localizedDescription)")
+            logDecodingError(error, data: data, context: "POST /v1/videos")
             throw VideoAPIError.decodingError(error)
         } catch {
             SoraPlannerLoggers.api.error("Network error: \(error.localizedDescription)")
@@ -109,9 +109,9 @@ class VideoAPIService {
         request.httpMethod = "GET"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
 
+        do {
             guard let httpResponse = response as? HTTPURLResponse else {
                 SoraPlannerLoggers.api.error("Invalid response type")
                 throw VideoAPIError.invalidResponse
@@ -130,7 +130,7 @@ class VideoAPIService {
         } catch let error as VideoAPIError {
             throw error
         } catch let error as DecodingError {
-            SoraPlannerLoggers.api.error("Failed to decode response: \(error.localizedDescription)")
+            logDecodingError(error, data: data, context: "GET /v1/videos/\(videoId)")
             throw VideoAPIError.decodingError(error)
         } catch {
             SoraPlannerLoggers.api.error("Network error: \(error.localizedDescription)")
@@ -195,9 +195,9 @@ class VideoAPIService {
         request.httpMethod = "GET"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
 
+        do {
             guard let httpResponse = response as? HTTPURLResponse else {
                 SoraPlannerLoggers.api.error("Invalid response type")
                 throw VideoAPIError.invalidResponse
@@ -218,7 +218,7 @@ class VideoAPIService {
         } catch let error as VideoAPIError {
             throw error
         } catch let error as DecodingError {
-            SoraPlannerLoggers.api.error("Failed to decode response: \(error.localizedDescription)")
+            logDecodingError(error, data: data, context: "GET /v1/videos")
             throw VideoAPIError.decodingError(error)
         } catch {
             SoraPlannerLoggers.api.error("Network error: \(error.localizedDescription)")
