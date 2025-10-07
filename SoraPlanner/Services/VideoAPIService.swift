@@ -183,10 +183,16 @@ class VideoAPIService {
     }
 
     /// List all video jobs
-    func listVideos() async throws -> [VideoJob] {
+    func listVideos(limit: Int = 100) async throws -> [VideoJob] {
         SoraPlannerLoggers.api.info("Fetching video list")
 
-        guard let url = URL(string: baseURL) else {
+        // Add pagination parameters to URL
+        var urlComponents = URLComponents(string: baseURL)
+        urlComponents?.queryItems = [
+            URLQueryItem(name: "limit", value: String(limit))
+        ]
+
+        guard let url = urlComponents?.url else {
             SoraPlannerLoggers.api.error("Invalid base URL")
             throw VideoAPIError.invalidURL
         }
