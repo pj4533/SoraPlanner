@@ -190,6 +190,43 @@ class VideoAPIService {
         }
     }
 
+    /// Delete a video job
+    func deleteVideo(videoId: String) async throws {
+        SoraPlannerLoggers.api.info("Deleting video: \(videoId)")
+
+        guard let url = URL(string: "\(baseURL)/\(videoId)") else {
+            SoraPlannerLoggers.api.error("Invalid video URL")
+            throw VideoAPIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                SoraPlannerLoggers.api.error("Invalid response type")
+                throw VideoAPIError.invalidResponse
+            }
+
+            guard (200...299).contains(httpResponse.statusCode) else {
+                let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+                SoraPlannerLoggers.api.error("HTTP error \(httpResponse.statusCode): \(errorMessage)")
+                throw VideoAPIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
+            }
+
+            SoraPlannerLoggers.api.info("Video deleted successfully: \(videoId)")
+
+        } catch let error as VideoAPIError {
+            throw error
+        } catch {
+            SoraPlannerLoggers.api.error("Delete error: \(error.localizedDescription)")
+            throw VideoAPIError.networkError(error)
+        }
+    }
+
     /// List all video jobs
     func listVideos(limit: Int = 100) async throws -> [VideoJob] {
         SoraPlannerLoggers.api.info("Fetching video list")

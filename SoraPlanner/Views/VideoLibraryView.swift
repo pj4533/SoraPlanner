@@ -107,6 +107,7 @@ struct VideoLibraryView: View {
 struct VideoLibraryRow: View {
     let video: VideoJob
     @ObservedObject var viewModel: VideoLibraryViewModel
+    @State private var showDeleteConfirmation = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -123,6 +124,16 @@ struct VideoLibraryRow: View {
                 }
 
                 Spacer()
+
+                // Delete Button
+                Button(action: {
+                    showDeleteConfirmation = true
+                }) {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.plain)
+                .help("Delete video")
 
                 // Video ID
                 Text("ID: \(video.id)")
@@ -207,6 +218,20 @@ struct VideoLibraryRow: View {
                 .stroke(video.status == .completed ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 2)
         )
         .help(video.status == .completed ? "Tap to play video" : "Video not ready for playback")
+        .confirmationDialog(
+            "Delete Video?",
+            isPresented: $showDeleteConfirmation,
+            presenting: video
+        ) { video in
+            Button("Delete", role: .destructive) {
+                Task {
+                    await viewModel.deleteVideo(video)
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: { video in
+            Text("Are you sure you want to delete video \(video.id)? This action cannot be undone.")
+        }
     }
 
     private var statusColor: Color {

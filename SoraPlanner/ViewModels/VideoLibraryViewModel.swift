@@ -79,6 +79,27 @@ class VideoLibraryViewModel: ObservableObject {
         await loadVideos()
     }
 
+    /// Delete a video from the library
+    func deleteVideo(_ video: VideoJob) async {
+        guard let service = apiService else {
+            SoraPlannerLoggers.ui.error("Cannot delete video - API service not available")
+            errorMessage = "API service not available"
+            return
+        }
+
+        SoraPlannerLoggers.ui.info("Deleting video: \(video.id)")
+
+        do {
+            try await service.deleteVideo(videoId: video.id)
+            // Remove from local list
+            videos.removeAll { $0.id == video.id }
+            SoraPlannerLoggers.ui.info("Video deleted from library: \(video.id)")
+        } catch {
+            SoraPlannerLoggers.ui.error("Failed to delete video: \(error.localizedDescription)")
+            errorMessage = error.localizedDescription
+        }
+    }
+
     // MARK: - Helper Methods
 
     /// Get a user-friendly status description
