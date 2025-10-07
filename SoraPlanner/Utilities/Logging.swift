@@ -19,8 +19,8 @@ enum LogSubsystem: String {
 }
 
 struct SoraPlannerLoggers {
-    nonisolated(unsafe) static let api = LogSubsystem.api.logger
-    nonisolated(unsafe) static let ui = LogSubsystem.ui.logger
-    nonisolated(unsafe) static let video = LogSubsystem.video.logger
-    nonisolated(unsafe) static let networking = LogSubsystem.networking.logger
+    static let api = LogSubsystem.api.logger
+    static let ui = LogSubsystem.ui.logger
+    static let video = LogSubsystem.video.logger
+    static let networking = LogSubsystem.networking.logger
 }

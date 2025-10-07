@@ -10,6 +10,7 @@ import AVKit
 
 struct VideoGenerationView: View {
     @StateObject private var viewModel = VideoGenerationViewModel()
+    @EnvironmentObject var playerCoordinator: VideoPlayerCoordinator
 
     var body: some View {
         VStack(spacing: 20) {
@@ -111,16 +112,28 @@ struct VideoGenerationView: View {
                 .padding(.horizontal)
             }
 
-            // Video Player
-            if let videoURL = viewModel.videoURL {
-                VStack(spacing: 8) {
-                    Text("Generated Video")
+            // Video Ready - Show Play Button
+            if let job = viewModel.currentVideoJob, job.status == .completed {
+                VStack(spacing: 12) {
+                    Text("Video Ready!")
                         .font(.headline)
+                        .foregroundColor(.green)
 
-                    VideoPlayer(player: AVPlayer(url: videoURL))
-                        .frame(height: 400)
-                        .cornerRadius(12)
-                        .shadow(radius: 5)
+                    Button(action: {
+                        Task {
+                            await playerCoordinator.play(job)
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "play.circle.fill")
+                            Text("Play Video")
+                        }
+                        .font(.title3)
+                        .padding()
+                        .background(Color.accentColor)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
                 }
                 .padding()
             }
@@ -142,4 +155,5 @@ struct VideoGenerationView: View {
 
 #Preview {
     VideoGenerationView()
+        .environmentObject(VideoPlayerCoordinator())
 }

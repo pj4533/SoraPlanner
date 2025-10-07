@@ -9,6 +9,7 @@ import SwiftUI
 
 struct VideoLibraryView: View {
     @StateObject private var viewModel = VideoLibraryViewModel()
+    @EnvironmentObject var playerCoordinator: VideoPlayerCoordinator
 
     var body: some View {
         VStack(spacing: 0) {
@@ -83,6 +84,11 @@ struct VideoLibraryView: View {
                     LazyVStack(spacing: 12) {
                         ForEach(viewModel.videos) { video in
                             VideoLibraryRow(video: video, viewModel: viewModel)
+                                .onTapGesture {
+                                    Task {
+                                        await playerCoordinator.play(video)
+                                    }
+                                }
                         }
                     }
                     .padding()
@@ -194,6 +200,11 @@ struct VideoLibraryRow: View {
         .padding()
         .background(Color(NSColor.controlBackgroundColor))
         .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(video.status == .completed ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 2)
+        )
+        .help(video.status == .completed ? "Tap to play video" : "Video not ready for playback")
     }
 
     private var statusColor: Color {
@@ -209,4 +220,5 @@ struct VideoLibraryRow: View {
 
 #Preview {
     VideoLibraryView()
+        .environmentObject(VideoPlayerCoordinator())
 }
