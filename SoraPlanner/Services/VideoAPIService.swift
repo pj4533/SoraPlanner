@@ -181,4 +181,48 @@ class VideoAPIService {
             throw VideoAPIError.networkError(error)
         }
     }
+
+    /// List all video jobs
+    func listVideos() async throws -> [VideoJob] {
+        SoraPlannerLoggers.api.info("Fetching video list")
+
+        guard let url = URL(string: baseURL) else {
+            SoraPlannerLoggers.api.error("Invalid base URL")
+            throw VideoAPIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                SoraPlannerLoggers.api.error("Invalid response type")
+                throw VideoAPIError.invalidResponse
+            }
+
+            SoraPlannerLoggers.networking.debug("HTTP \(httpResponse.statusCode) response received")
+
+            guard (200...299).contains(httpResponse.statusCode) else {
+                let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+                SoraPlannerLoggers.api.error("HTTP error \(httpResponse.statusCode): \(errorMessage)")
+                throw VideoAPIError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
+            }
+
+            let listResponse = try JSONDecoder().decode(VideoListResponse.self, from: data)
+            SoraPlannerLoggers.api.info("Retrieved \(listResponse.data.count) videos")
+            return listResponse.data
+
+        } catch let error as VideoAPIError {
+            throw error
+        } catch let error as DecodingError {
+            SoraPlannerLoggers.api.error("Failed to decode response: \(error.localizedDescription)")
+            throw VideoAPIError.decodingError(error)
+        } catch {
+            SoraPlannerLoggers.api.error("Network error: \(error.localizedDescription)")
+            throw VideoAPIError.networkError(error)
+        }
+    }
 }
