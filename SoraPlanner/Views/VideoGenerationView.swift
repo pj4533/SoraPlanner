@@ -42,6 +42,33 @@ struct VideoGenerationView: View {
             }
             .padding(.horizontal)
 
+            // Duration Picker Section
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Video Duration")
+                    .font(.headline)
+
+                HStack(spacing: 16) {
+                    Picker("Duration", selection: $viewModel.duration) {
+                        Text("4 seconds").tag(4)
+                        Text("6 seconds").tag(6)
+                        Text("8 seconds").tag(8)
+                        Text("10 seconds").tag(10)
+                    }
+                    .pickerStyle(.segmented)
+                    .disabled(viewModel.isGenerating)
+
+                    Text("\(viewModel.duration)s")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(width: 30)
+                }
+
+                Text("Select the length of your generated video")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal)
+
             // Generate Button
             Button(action: {
                 Task {

@@ -14,6 +14,7 @@ import os
 class VideoGenerationViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var prompt: String = ""
+    @Published var duration: Int = 4 // Duration in seconds (default 4)
     @Published var currentVideoJob: VideoJob?
     @Published var videoURL: URL?
     @Published var isGenerating: Bool = false
@@ -81,7 +82,7 @@ class VideoGenerationViewModel: ObservableObject {
             }
 
             // Create video job
-            let job = try await service.createVideo(prompt: prompt)
+            let job = try await service.createVideo(prompt: prompt, seconds: String(duration))
             currentVideoJob = job
 
             SoraPlannerLoggers.ui.info("Video job created: \(job.id)")
