@@ -15,6 +15,7 @@ class VideoLibraryViewModel: ObservableObject {
     @Published var videos: [VideoJob] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
+    @Published var deletingVideoIds: Set<String> = []
 
     // MARK: - Private Properties
     private var apiService: VideoAPIService?
@@ -77,6 +78,32 @@ class VideoLibraryViewModel: ObservableObject {
     /// Refresh the video list
     func refresh() async {
         await loadVideos()
+    }
+
+    /// Delete a video from the library
+    func deleteVideo(_ video: VideoJob) async {
+        guard let service = apiService else {
+            SoraPlannerLoggers.ui.error("Cannot delete video - API service not available")
+            errorMessage = "API service not available"
+            return
+        }
+
+        SoraPlannerLoggers.ui.info("Deleting video: \(video.id)")
+
+        // Mark as deleting
+        deletingVideoIds.insert(video.id)
+
+        do {
+            try await service.deleteVideo(videoId: video.id)
+            // Remove from local list
+            videos.removeAll { $0.id == video.id }
+            deletingVideoIds.remove(video.id)
+            SoraPlannerLoggers.ui.info("Video deleted from library: \(video.id)")
+        } catch {
+            deletingVideoIds.remove(video.id)
+            SoraPlannerLoggers.ui.error("Failed to delete video: \(error.localizedDescription)")
+            errorMessage = error.localizedDescription
+        }
     }
 
     // MARK: - Helper Methods
