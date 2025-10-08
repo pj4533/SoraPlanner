@@ -68,8 +68,8 @@ struct VideoPlayerView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             } else if let videoURL = coordinator.videoURL {
-                // Video Player
-                VideoPlayer(player: AVPlayer(url: videoURL))
+                // Video Player - Using custom looping player for seamless playback
+                LoopingVideoPlayerView(url: videoURL)
                     .frame(minHeight: 400)
                     .cornerRadius(12)
                     .padding()
