@@ -16,7 +16,7 @@ SoraPlanner provides an intuitive, native macOS interface for working with OpenA
 - **Flexible Duration Options**: Choose between 4, 10, or 30-second videos
 - **Real-Time Progress Tracking**: Monitor your video generation with live status updates
 - **Video Library Management**: View all your generated videos with detailed metadata
-- **Integrated Video Playback**: Watch your videos directly within the app
+- **Integrated Video Playback**: Watch your videos directly within the app with seamless looping
 
 ## Setup
 

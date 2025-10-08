@@ -29,11 +29,13 @@ This application provides a native macOS interface for creating, tracking, and m
 - Pull-to-refresh capability
 
 ### Video Playback
-- Dedicated video player modal with AVKit integration
+- Dedicated video player modal with custom looping implementation
+- Seamless, gapless video looping using AVPlayerLooper and AVQueuePlayer
 - Automatic video download on playback request
 - Video metadata overlay (resolution, duration, quality)
 - Shared coordinator pattern for consistent playback across tabs
 - Loading states and error handling
+- Automatic playback with proper lifecycle management
 
 ### Configuration & Settings
 - Dedicated settings tab for application configuration
@@ -89,10 +91,11 @@ SoraPlanner/
 │   ├── VideoLibraryViewModel.swift      # Business logic for video library
 │   └── VideoPlayerCoordinator.swift     # Shared video playback coordinator
 ├── Views/
-│   ├── VideoGenerationView.swift  # Video creation interface
-│   ├── VideoLibraryView.swift     # Video list and management interface
-│   ├── VideoPlayerView.swift      # Video playback modal
-│   └── ConfigurationView.swift    # Settings and configuration interface
+│   ├── VideoGenerationView.swift      # Video creation interface
+│   ├── VideoLibraryView.swift         # Video list and management interface
+│   ├── VideoPlayerView.swift          # Video playback modal with metadata display
+│   ├── LoopingVideoPlayerView.swift   # Custom looping player using AVPlayerLooper
+│   └── ConfigurationView.swift        # Settings and configuration interface
 ├── Utilities/
 │   ├── Logging.swift              # Centralized logging configuration
 │   └── DecodingErrorLogger.swift  # JSON decoding error utilities
@@ -114,6 +117,14 @@ internal_docs/                     # API documentation and reference materials
 - `VideoPlayerCoordinator` manages shared video playback state across tabs
 - Injected via SwiftUI environment object
 - Handles video download and presentation logic
+
+### Custom Video Player Implementation
+- `LoopingVideoPlayerView` provides seamless video looping using NSViewRepresentable
+- Wraps AVPlayerLayer with AVQueuePlayer for native playback control
+- Uses AVPlayerLooper for gapless, continuous looping without flicker or pause
+- Coordinator pattern manages player lifecycle and cleanup
+- Automatic playback initiation and proper resource deallocation in deinit
+- Video gravity set to `.resizeAspect` for optimal display without distortion
 
 ### Service Layer
 - `VideoAPIService` encapsulates all API communication
