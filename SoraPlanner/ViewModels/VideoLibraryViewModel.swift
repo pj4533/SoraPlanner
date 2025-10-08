@@ -122,17 +122,34 @@ class VideoLibraryViewModel: ObservableObject {
             )
         }
 
-        SoraPlannerLoggers.video.info("Requesting Photos library permission for video: \(video.id)")
+        // Check current authorization status
+        let currentStatus = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+        SoraPlannerLoggers.video.info("Current Photos library authorization status: \(currentStatus.rawValue)")
 
         // Request permission
+        SoraPlannerLoggers.video.info("Requesting Photos library permission for video: \(video.id)")
         let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+        SoraPlannerLoggers.video.info("Photos library authorization status after request: \(status.rawValue)")
 
-        guard status == .authorized else {
-            SoraPlannerLoggers.video.error("Photos library permission denied")
+        guard status == .authorized || status == .limited else {
+            SoraPlannerLoggers.video.error("Photos library permission denied or restricted. Status: \(status.rawValue)")
+
+            let errorMessage: String
+            switch status {
+            case .notDetermined:
+                errorMessage = "Photo library permission was not determined. Please try again."
+            case .restricted:
+                errorMessage = "Photo library access is restricted. This may be due to parental controls or device management."
+            case .denied:
+                errorMessage = "Permission to access Photos library was denied. Please grant access in System Settings > Privacy & Security > Photos."
+            default:
+                errorMessage = "Unable to access Photos library. Please check System Settings > Privacy & Security > Photos."
+            }
+
             throw NSError(
                 domain: "SoraPlanner",
                 code: 1002,
-                userInfo: [NSLocalizedDescriptionKey: "Permission to access Photos library was denied. Please grant access in System Settings."]
+                userInfo: [NSLocalizedDescriptionKey: errorMessage]
             )
         }
 
