@@ -108,6 +108,8 @@ struct VideoLibraryRow: View {
     let video: VideoJob
     @ObservedObject var viewModel: VideoLibraryViewModel
     @State private var showDeleteConfirmation = false
+    @State private var showSaveSuccess = false
+    @State private var saveErrorMessage: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -124,6 +126,31 @@ struct VideoLibraryRow: View {
                 }
 
                 Spacer()
+
+                // Save to Photos Button (only for completed videos)
+                if video.status == .completed {
+                    if viewModel.savingVideoIds.contains(video.id) {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                            .frame(width: 16, height: 16)
+                    } else {
+                        Button(action: {
+                            Task {
+                                do {
+                                    try await viewModel.saveToPhotos(video)
+                                    showSaveSuccess = true
+                                } catch {
+                                    saveErrorMessage = error.localizedDescription
+                                }
+                            }
+                        }) {
+                            Image(systemName: "square.and.arrow.down")
+                                .foregroundColor(.accentColor)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Save to Photos Library")
+                    }
+                }
 
                 // Delete Button or Progress Indicator
                 if viewModel.deletingVideoIds.contains(video.id) {
@@ -245,6 +272,18 @@ struct VideoLibraryRow: View {
             Button("Cancel", role: .cancel) { }
         } message: { video in
             Text("Are you sure you want to delete video \(video.id)? This action cannot be undone.")
+        }
+        .alert("Saved to Photos", isPresented: $showSaveSuccess) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Video has been successfully saved to your Photos library.")
+        }
+        .alert("Save Failed", isPresented: .constant(saveErrorMessage != nil), presenting: saveErrorMessage) { _ in
+            Button("OK", role: .cancel) {
+                saveErrorMessage = nil
+            }
+        } message: { error in
+            Text(error)
         }
     }
 
