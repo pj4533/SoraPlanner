@@ -122,13 +122,17 @@ class VideoLibraryViewModel: ObservableObject {
             )
         }
 
-        // Check current authorization status
-        let currentStatus = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+        // Check current authorization status (using legacy API for macOS compatibility)
+        let currentStatus = PHPhotoLibrary.authorizationStatus()
         SoraPlannerLoggers.video.info("Current Photos library authorization status: \(currentStatus.rawValue)")
 
-        // Request permission
+        // Request permission using legacy API (works better on macOS)
         SoraPlannerLoggers.video.info("Requesting Photos library permission for video: \(video.id)")
-        let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+        let status = await withCheckedContinuation { continuation in
+            PHPhotoLibrary.requestAuthorization { status in
+                continuation.resume(returning: status)
+            }
+        }
         SoraPlannerLoggers.video.info("Photos library authorization status after request: \(status.rawValue)")
 
         guard status == .authorized || status == .limited else {
