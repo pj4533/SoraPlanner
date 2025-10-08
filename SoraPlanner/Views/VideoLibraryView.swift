@@ -185,12 +185,19 @@ struct VideoLibraryRow: View {
 
             // Error Message (if failed)
             if video.status == .failed, let error = video.error {
-                HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.circle.fill")
-                        .foregroundColor(.red)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundColor(.red)
+                        Text("Error: \(error.code)")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.red)
+                    }
                     Text(error.message)
-                        .font(.caption)
-                        .foregroundColor(.red)
+                        .font(.caption2)
+                        .foregroundColor(.red.opacity(0.9))
+                        .lineLimit(3)
                 }
                 .padding(.top, 4)
             }
