@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 import os
+import Photos
 
 @MainActor
 class VideoLibraryViewModel: ObservableObject {
@@ -16,6 +17,7 @@ class VideoLibraryViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var deletingVideoIds: Set<String> = []
+    @Published var savingVideoIds: Set<String> = []
 
     // MARK: - Private Properties
     private var apiService: VideoAPIService?
@@ -104,6 +106,53 @@ class VideoLibraryViewModel: ObservableObject {
             SoraPlannerLoggers.ui.error("Failed to delete video: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// Save a video to the Photos library
+    func saveToPhotos(_ video: VideoJob) async throws {
+        guard let service = apiService else {
+            throw VideoAPIError.missingAPIKey
+        }
+
+        guard video.status == .completed else {
+            throw NSError(
+                domain: "SoraPlanner",
+                code: 1001,
+                userInfo: [NSLocalizedDescriptionKey: "Video must be completed before saving to Photos"]
+            )
+        }
+
+        SoraPlannerLoggers.video.info("Requesting Photos library permission for video: \(video.id)")
+
+        // Request permission
+        let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+
+        guard status == .authorized else {
+            SoraPlannerLoggers.video.error("Photos library permission denied")
+            throw NSError(
+                domain: "SoraPlanner",
+                code: 1002,
+                userInfo: [NSLocalizedDescriptionKey: "Permission to access Photos library was denied. Please grant access in System Settings."]
+            )
+        }
+
+        // Mark as saving
+        savingVideoIds.insert(video.id)
+        defer { savingVideoIds.remove(video.id) }
+
+        SoraPlannerLoggers.video.info("Downloading video for Photos save: \(video.id)")
+
+        // Download video
+        let videoURL = try await service.downloadVideo(videoId: video.id)
+
+        SoraPlannerLoggers.video.info("Saving video to Photos library: \(videoURL.path)")
+
+        // Save to Photos library
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: videoURL)
+        }
+
+        SoraPlannerLoggers.video.info("Successfully saved video \(video.id) to Photos library")
     }
 
     // MARK: - Helper Methods
