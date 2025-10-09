@@ -12,11 +12,13 @@ SoraPlanner provides an intuitive, native macOS interface for working with OpenA
 
 ### Features
 
-- **Text-to-Video Creation**: Enter natural language prompts to generate videos
-- **Flexible Duration Options**: Choose between 4, 10, or 30-second videos
+- **Prompt Library Management**: Create, edit, and organize reusable video generation prompts with persistent storage
+- **Modal Video Generation**: Launch video generation from prompts or create new videos on-demand
+- **Flexible Duration Options**: Choose between 4, 8, or 12-second videos with transparent pricing
 - **Real-Time Progress Tracking**: Monitor your video generation with live status updates
 - **Video Library Management**: View all your generated videos with detailed metadata
 - **Integrated Video Playback**: Watch your videos directly within the app with seamless looping
+- **Secure API Key Management**: Store your OpenAI API key securely in macOS Keychain via Settings tab
 
 ## Setup
 
@@ -34,28 +36,30 @@ SoraPlanner provides an intuitive, native macOS interface for working with OpenA
    cd SoraPlanner
    ```
 
-2. **Configure API Key**
-
-   Set your OpenAI API key as an environment variable:
-
-   **Via Xcode Scheme (Recommended)**
-   - Open `SoraPlanner.xcodeproj` in Xcode
-   - Go to Product > Scheme > Edit Scheme...
-   - Select "Run" > "Arguments" tab
-   - Under "Environment Variables", add:
-     - Name: `OPENAI_API_KEY`
-     - Value: `your-api-key-here`
-
-   **Via Shell Profile**
-   - Add to ~/.zshrc or ~/.bash_profile:
-     ```bash
-     export OPENAI_API_KEY="your-api-key-here"
-     ```
-   - Restart Xcode
-
-3. **Build and Run**
+2. **Build and Run**
    - Open `SoraPlanner.xcodeproj` in Xcode
    - Press Cmd+R to build and run
+
+3. **Configure API Key**
+
+   The application requires an OpenAI API key for authentication.
+
+   **Preferred Method: Settings Tab (Secure Keychain Storage)**
+   - Launch the application
+   - Navigate to the Settings tab
+   - Enter your OpenAI API key in the secure field
+   - Click "Save API Key"
+   - The key is encrypted and stored in macOS Keychain
+   - Persists between app launches
+
+   **Alternative Method: Environment Variable (Legacy)**
+
+   For development or backward compatibility, you can use an environment variable:
+
+   - **Via Xcode Scheme**: Go to Product > Scheme > Edit Scheme... > Run > Arguments tab > Environment Variables, add `OPENAI_API_KEY` with your key
+   - **Via Shell Profile**: Add `export OPENAI_API_KEY="your-api-key-here"` to ~/.zshrc or ~/.bash_profile and restart Xcode
+
+   Note: Keychain storage takes precedence if both methods are configured.
 
 ---
 

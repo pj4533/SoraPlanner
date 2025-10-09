@@ -139,6 +139,13 @@ internal_docs/                     # API documentation and reference materials
 - Automatic loading on app launch
 - Storage key: `saved_prompts`
 
+### Modal Presentation Pattern
+- Uses SwiftUI's `.sheet(item:)` modifier for proper modal identity management
+- `VideoGenerationRequest` wrapper struct (Identifiable) ensures each modal has unique identity
+- Prevents state issues when presenting multiple modals sequentially
+- Modal dismissal triggers success callbacks to parent view
+- Enables clean separation between prompt management and video generation flows
+
 ### Coordinator Pattern
 - `VideoPlayerCoordinator` manages shared video playback state across tabs
 - Injected via SwiftUI environment object
