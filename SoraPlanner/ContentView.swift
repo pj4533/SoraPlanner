@@ -9,13 +9,24 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var playerCoordinator = VideoPlayerCoordinator()
+    @State private var showGenerationModal = false
+    @State private var promptToGenerate: String?
 
     var body: some View {
         TabView {
-            VideoGenerationView()
-                .tabItem {
-                    Label("Generate", systemImage: "wand.and.stars")
+            PromptLibraryView(
+                onGeneratePrompt: { prompt in
+                    promptToGenerate = prompt
+                    showGenerationModal = true
+                },
+                onGenerateEmpty: {
+                    promptToGenerate = nil
+                    showGenerationModal = true
                 }
+            )
+            .tabItem {
+                Label("Prompts", systemImage: "doc.text.fill")
+            }
 
             VideoLibraryView()
                 .tabItem {
@@ -31,6 +42,13 @@ struct ContentView: View {
         .environmentObject(playerCoordinator)
         .sheet(item: $playerCoordinator.currentVideo) { video in
             VideoPlayerView(video: video)
+                .environmentObject(playerCoordinator)
+        }
+        .sheet(isPresented: $showGenerationModal, onDismiss: {
+            // Reset prompt when modal is dismissed
+            promptToGenerate = nil
+        }) {
+            VideoGenerationView(initialPrompt: promptToGenerate)
                 .environmentObject(playerCoordinator)
         }
     }

@@ -11,6 +11,9 @@ import AVKit
 struct VideoGenerationView: View {
     @StateObject private var viewModel = VideoGenerationViewModel()
     @EnvironmentObject var playerCoordinator: VideoPlayerCoordinator
+    @Environment(\.dismiss) private var dismiss
+
+    let initialPrompt: String?
 
     var body: some View {
         VStack(spacing: 20) {
@@ -131,13 +134,27 @@ struct VideoGenerationView: View {
         }
         .frame(minWidth: 600, minHeight: 700)
         .onAppear {
+            // Set initial prompt if provided
+            if let prompt = initialPrompt {
+                viewModel.prompt = prompt
+            }
             // Retry API service initialization in case user just added API key in Settings
             viewModel.retryAPIServiceInitialization()
+        }
+        .onChange(of: viewModel.successMessage) { oldValue, newValue in
+            // Dismiss modal after successful generation
+            if newValue != nil {
+                Task {
+                    // Wait for success message to be shown
+                    try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+                    dismiss()
+                }
+            }
         }
     }
 }
 
 #Preview {
-    VideoGenerationView()
+    VideoGenerationView(initialPrompt: nil)
         .environmentObject(VideoPlayerCoordinator())
 }
