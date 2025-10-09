@@ -28,8 +28,15 @@ class VideoGenerationViewModel: ObservableObject {
     }
 
     // MARK: - Initialization
-    init() {
+    init(initialPrompt: String? = nil) {
         SoraPlannerLoggers.ui.info("VideoGenerationViewModel initialized")
+
+        // Set initial prompt if provided
+        if let prompt = initialPrompt, !prompt.isEmpty {
+            self.prompt = prompt
+            SoraPlannerLoggers.ui.debug("Initial prompt set: \(prompt.prefix(50))...")
+        }
+
         do {
             self.apiService = try VideoAPIService()
         } catch {

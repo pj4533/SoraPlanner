@@ -9,12 +9,17 @@ import SwiftUI
 import AVKit
 
 struct VideoGenerationView: View {
-    @StateObject private var viewModel = VideoGenerationViewModel()
+    @StateObject private var viewModel: VideoGenerationViewModel
     @EnvironmentObject var playerCoordinator: VideoPlayerCoordinator
     @Environment(\.dismiss) private var dismiss
 
-    let initialPrompt: String?
     let onGenerationSuccess: () -> Void
+
+    init(initialPrompt: String?, onGenerationSuccess: @escaping () -> Void) {
+        self.onGenerationSuccess = onGenerationSuccess
+        // Create the view model with the initial prompt
+        self._viewModel = StateObject(wrappedValue: VideoGenerationViewModel(initialPrompt: initialPrompt))
+    }
 
     var body: some View {
         VStack(spacing: 20) {
@@ -150,14 +155,6 @@ struct VideoGenerationView: View {
         }
         .frame(minWidth: 600, minHeight: 700)
         .onAppear {
-            print("DEBUG: VideoGenerationView.onAppear - initialPrompt: '\(initialPrompt ?? "nil")'")
-            // Set initial prompt if provided
-            if let prompt = initialPrompt, !prompt.isEmpty {
-                print("DEBUG: Setting viewModel.prompt to: '\(prompt)'")
-                viewModel.prompt = prompt
-            } else {
-                print("DEBUG: Not setting prompt - initialPrompt is nil or empty")
-            }
             // Retry API service initialization in case user just added API key in Settings
             viewModel.retryAPIServiceInitialization()
         }

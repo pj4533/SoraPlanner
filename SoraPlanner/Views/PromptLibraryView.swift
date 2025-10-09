@@ -87,7 +87,6 @@ struct PromptLibraryView: View {
                                 prompt: prompt,
                                 viewModel: viewModel,
                                 onGenerate: {
-                                    print("DEBUG: PromptRow Generate button tapped - prompt.text: '\(prompt.text)'")
                                     onGeneratePrompt(prompt.text)
                                 }
                             )

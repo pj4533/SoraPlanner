@@ -17,12 +17,10 @@ struct ContentView: View {
         TabView {
             PromptLibraryView(
                 onGeneratePrompt: { prompt in
-                    print("DEBUG: Setting promptToGenerate to: '\(prompt)'")
                     promptToGenerate = prompt
                     showGenerationModal = true
                 },
                 onGenerateEmpty: {
-                    print("DEBUG: Setting promptToGenerate to nil")
                     promptToGenerate = nil
                     showGenerationModal = true
                 }
