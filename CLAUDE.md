@@ -4,18 +4,33 @@ SoraPlanner is a macOS application for planning and managing video generations u
 
 ## Project Overview
 
-This application provides a native macOS interface for creating, tracking, and managing AI-generated videos through OpenAI's video generation platform. It features a tabbed interface with separate views for video generation and library management, integrated video playback, and real-time status polling for generation jobs.
+This application provides a native macOS interface for creating, tracking, and managing AI-generated videos through OpenAI's video generation platform. It features a tabbed interface with dedicated views for prompt library management, video library, and settings. The app includes persistent prompt storage, modal video generation, integrated video playback, and real-time status polling for generation jobs.
 
 ## Core Features
 
-### Video Generation Interface
+### Prompt Library Management
+- Dedicated Prompts tab with persistent storage of reusable video prompts
+- Inline editing of prompt title and text (max 2000 characters)
+- Character count indicator with visual feedback
+- Modal video generation workflow from prompts or empty state
+- Auto-save functionality on prompt changes
+- Individual Generate buttons per prompt for quick access
+- Toolbar Generate button for creating videos with empty prompts
+- Add new prompt functionality via toolbar button
+- Delete prompt with confirmation dialog
+- Created and modified timestamps for each prompt
+- Prompts persisted using UserDefaults (survives app restarts)
+
+### Video Generation Interface (Modal)
+- Modal presentation launched from Prompt Library
 - Interactive prompt editor with multi-line text support
-- Duration selection (4, 10, or 30 seconds) with pricing information
+- Optional pre-filled prompt from library or empty state
+- Duration selection (4, 8, or 12 seconds) with pricing information
 - Real-time generation status monitoring with progress indicators
 - Animated visual feedback during video processing
 - Integrated error handling and user-friendly error messages
-- Automatic status polling for queued and in-progress jobs
-- Direct playback of completed videos
+- Auto-dismiss after successful video generation
+- Success message display before dismissal
 
 ### Video Library Management
 - Comprehensive list view of all generated videos
@@ -57,6 +72,7 @@ This application provides a native macOS interface for creating, tracking, and m
 - **Logging**: Apple's Unified Logging System (os.log)
 - **Networking**: URLSession with async/await
 - **Security**: macOS Keychain Services for secure credential storage
+- **Persistence**: UserDefaults for prompt library storage
 
 ## API Integration
 
@@ -80,18 +96,21 @@ The application integrates with OpenAI's Video API through a dedicated service l
 ```
 SoraPlanner/
 ├── SoraPlannerApp.swift           # Main app entry point
-├── ContentView.swift               # Root view with tab navigation and player coordinator
+├── ContentView.swift               # Root view with tab navigation, modal sheets, and player coordinator
 ├── Models/
+│   ├── Prompt.swift               # Prompt data model for library (Identifiable, Codable)
 │   └── VideoJob.swift             # Core data models (VideoJob, VideoStatus, VideoError)
 ├── Services/
 │   ├── VideoAPIService.swift      # OpenAI Video API client
 │   └── KeychainService.swift      # Secure keychain storage service
 ├── ViewModels/
+│   ├── PromptLibraryViewModel.swift     # Business logic for prompt library with persistence
 │   ├── VideoGenerationViewModel.swift   # Business logic for video generation
 │   ├── VideoLibraryViewModel.swift      # Business logic for video library
 │   └── VideoPlayerCoordinator.swift     # Shared video playback coordinator
 ├── Views/
-│   ├── VideoGenerationView.swift      # Video creation interface
+│   ├── PromptLibraryView.swift        # Prompt library tab with inline editing
+│   ├── VideoGenerationView.swift      # Video creation modal interface
 │   ├── VideoLibraryView.swift         # Video list and management interface
 │   ├── VideoPlayerView.swift          # Video playback modal with metadata display
 │   ├── LoopingVideoPlayerView.swift   # Custom looping player using AVPlayerLooper
@@ -109,9 +128,16 @@ internal_docs/                     # API documentation and reference materials
 ## Architecture Patterns
 
 ### MVVM (Model-View-ViewModel)
-- **Models**: Codable structs for API request/response (VideoJob, CreateVideoRequest, etc.)
+- **Models**: Codable structs for API request/response (VideoJob, CreateVideoRequest, etc.) and local data (Prompt)
 - **ViewModels**: Observable objects managing business logic and state (@MainActor isolated)
 - **Views**: SwiftUI views with declarative UI and data binding
+
+### Prompt Library Persistence
+- `PromptLibraryViewModel` manages prompt CRUD operations with UserDefaults persistence
+- Prompts stored as JSON-encoded array using `UserDefaults.standard`
+- Auto-save on all modifications (add, update, delete)
+- Automatic loading on app launch
+- Storage key: `saved_prompts`
 
 ### Coordinator Pattern
 - `VideoPlayerCoordinator` manages shared video playback state across tabs
@@ -224,16 +250,21 @@ The application checks keychain first, then falls back to environment variable. 
 - Videos are downloaded to temporary directory (not persisted between app launches)
 - No local video storage or caching mechanism
 - Polling interval fixed at 2 seconds (not configurable)
-- No support for video deletion via UI (API endpoint available but not implemented)
 - No support for video remixing features (API supports but not yet implemented)
+- Prompts stored in UserDefaults (lightweight, but no iCloud sync or backup)
 
 ## Future Enhancement Opportunities
 
 - Persistent local video storage with cache management
 - Configurable polling intervals
-- Delete video functionality in library view
-- Video prompt history and favorites
-- Batch video generation
+- Batch video generation from multiple prompts
 - Video remixing from existing videos
-- Advanced filtering and sorting in library
+- Advanced filtering and sorting in video library
 - Export video with metadata
+- Prompt templates and categories
+- Search/filter functionality for prompts
+- Import/export prompts as JSON
+- Prompt sharing between devices via iCloud
+- Tags or folders for prompt organization
+- Duplicate prompt functionality
+- Drag-to-reorder prompts

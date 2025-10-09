@@ -7,15 +7,30 @@
 
 import SwiftUI
 
+// Identifiable wrapper for sheet presentation with proper view identity
+struct VideoGenerationRequest: Identifiable {
+    let id = UUID()
+    let initialPrompt: String?
+}
+
 struct ContentView: View {
     @StateObject private var playerCoordinator = VideoPlayerCoordinator()
+    @State private var generationRequest: VideoGenerationRequest?
+    @State private var showGenerationSuccess = false
 
     var body: some View {
         TabView {
-            VideoGenerationView()
-                .tabItem {
-                    Label("Generate", systemImage: "wand.and.stars")
+            PromptLibraryView(
+                onGeneratePrompt: { prompt in
+                    generationRequest = VideoGenerationRequest(initialPrompt: prompt)
+                },
+                onGenerateEmpty: {
+                    generationRequest = VideoGenerationRequest(initialPrompt: nil)
                 }
+            )
+            .tabItem {
+                Label("Prompts", systemImage: "doc.text.fill")
+            }
 
             VideoLibraryView()
                 .tabItem {
@@ -32,6 +47,20 @@ struct ContentView: View {
         .sheet(item: $playerCoordinator.currentVideo) { video in
             VideoPlayerView(video: video)
                 .environmentObject(playerCoordinator)
+        }
+        .sheet(item: $generationRequest) { request in
+            VideoGenerationView(
+                initialPrompt: request.initialPrompt,
+                onGenerationSuccess: {
+                    showGenerationSuccess = true
+                }
+            )
+            .environmentObject(playerCoordinator)
+        }
+        .alert("Generation Queued", isPresented: $showGenerationSuccess) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Your video has been queued for generation. Check the Library tab to monitor its progress.")
         }
     }
 }

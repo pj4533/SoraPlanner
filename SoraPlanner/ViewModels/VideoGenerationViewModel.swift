@@ -28,8 +28,15 @@ class VideoGenerationViewModel: ObservableObject {
     }
 
     // MARK: - Initialization
-    init() {
+    init(initialPrompt: String? = nil) {
         SoraPlannerLoggers.ui.info("VideoGenerationViewModel initialized")
+
+        // Set initial prompt if provided
+        if let prompt = initialPrompt, !prompt.isEmpty {
+            self.prompt = prompt
+            SoraPlannerLoggers.ui.debug("Initial prompt set: \(prompt.prefix(50))...")
+        }
+
         do {
             self.apiService = try VideoAPIService()
         } catch {
@@ -59,10 +66,11 @@ class VideoGenerationViewModel: ObservableObject {
     }
 
     /// Start video generation process
-    func generateVideo() async {
+    /// Returns true if generation was successful, false otherwise
+    func generateVideo() async -> Bool {
         guard canGenerate else {
             SoraPlannerLoggers.ui.warning("Cannot generate: invalid state")
-            return
+            return false
         }
 
         SoraPlannerLoggers.ui.info("Starting video generation")
@@ -81,22 +89,19 @@ class VideoGenerationViewModel: ObservableObject {
 
             SoraPlannerLoggers.ui.info("Video job created: \(job.id)")
 
-            // Show success message
-            successMessage = "Video queued! Check the Library tab for status."
-
-            // Reset form after brief delay
-            try await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
-
             // Reset the form
             prompt = ""
             duration = 4
             successMessage = nil
             isGenerating = false
 
+            return true
+
         } catch {
             SoraPlannerLoggers.ui.error("Failed to create video job: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
             isGenerating = false
+            return false
         }
     }
 

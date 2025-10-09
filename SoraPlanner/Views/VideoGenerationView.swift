@@ -9,16 +9,35 @@ import SwiftUI
 import AVKit
 
 struct VideoGenerationView: View {
-    @StateObject private var viewModel = VideoGenerationViewModel()
+    @StateObject private var viewModel: VideoGenerationViewModel
     @EnvironmentObject var playerCoordinator: VideoPlayerCoordinator
+    @Environment(\.dismiss) private var dismiss
+
+    let onGenerationSuccess: () -> Void
+
+    init(initialPrompt: String?, onGenerationSuccess: @escaping () -> Void) {
+        self.onGenerationSuccess = onGenerationSuccess
+        // Create the view model with the initial prompt
+        self._viewModel = StateObject(wrappedValue: VideoGenerationViewModel(initialPrompt: initialPrompt))
+    }
 
     var body: some View {
         VStack(spacing: 20) {
-            // App Title
-            Text("Video Generation")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .padding(.top)
+            // Header with Cancel button
+            HStack {
+                Text("Video Generation")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+
+                Spacer()
+
+                Button("Cancel") {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+            }
+            .padding(.horizontal)
+            .padding(.top)
 
             // Prompt Input Section
             VStack(alignment: .leading, spacing: 8) {
@@ -77,7 +96,12 @@ struct VideoGenerationView: View {
             // Generate Button
             Button(action: {
                 Task {
-                    await viewModel.generateVideo()
+                    let success = await viewModel.generateVideo()
+                    if success {
+                        // Dismiss immediately and notify parent
+                        dismiss()
+                        onGenerationSuccess()
+                    }
                 }
             }) {
                 HStack {
@@ -138,6 +162,6 @@ struct VideoGenerationView: View {
 }
 
 #Preview {
-    VideoGenerationView()
+    VideoGenerationView(initialPrompt: nil, onGenerationSuccess: {})
         .environmentObject(VideoPlayerCoordinator())
 }
