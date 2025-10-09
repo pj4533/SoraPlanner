@@ -7,22 +7,25 @@
 
 import SwiftUI
 
+// Identifiable wrapper for sheet presentation with proper view identity
+struct VideoGenerationRequest: Identifiable {
+    let id = UUID()
+    let initialPrompt: String?
+}
+
 struct ContentView: View {
     @StateObject private var playerCoordinator = VideoPlayerCoordinator()
-    @State private var showGenerationModal = false
-    @State private var promptToGenerate: String?
+    @State private var generationRequest: VideoGenerationRequest?
     @State private var showGenerationSuccess = false
 
     var body: some View {
         TabView {
             PromptLibraryView(
                 onGeneratePrompt: { prompt in
-                    promptToGenerate = prompt
-                    showGenerationModal = true
+                    generationRequest = VideoGenerationRequest(initialPrompt: prompt)
                 },
                 onGenerateEmpty: {
-                    promptToGenerate = nil
-                    showGenerationModal = true
+                    generationRequest = VideoGenerationRequest(initialPrompt: nil)
                 }
             )
             .tabItem {
@@ -45,12 +48,9 @@ struct ContentView: View {
             VideoPlayerView(video: video)
                 .environmentObject(playerCoordinator)
         }
-        .sheet(isPresented: $showGenerationModal, onDismiss: {
-            // Reset prompt when modal is dismissed
-            promptToGenerate = nil
-        }) {
+        .sheet(item: $generationRequest) { request in
             VideoGenerationView(
-                initialPrompt: promptToGenerate,
+                initialPrompt: request.initialPrompt,
                 onGenerationSuccess: {
                     showGenerationSuccess = true
                 }
