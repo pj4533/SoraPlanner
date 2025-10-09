@@ -11,15 +11,18 @@ struct ContentView: View {
     @StateObject private var playerCoordinator = VideoPlayerCoordinator()
     @State private var showGenerationModal = false
     @State private var promptToGenerate: String?
+    @State private var showGenerationSuccess = false
 
     var body: some View {
         TabView {
             PromptLibraryView(
                 onGeneratePrompt: { prompt in
+                    print("DEBUG: Setting promptToGenerate to: '\(prompt)'")
                     promptToGenerate = prompt
                     showGenerationModal = true
                 },
                 onGenerateEmpty: {
+                    print("DEBUG: Setting promptToGenerate to nil")
                     promptToGenerate = nil
                     showGenerationModal = true
                 }
@@ -48,8 +51,18 @@ struct ContentView: View {
             // Reset prompt when modal is dismissed
             promptToGenerate = nil
         }) {
-            VideoGenerationView(initialPrompt: promptToGenerate)
-                .environmentObject(playerCoordinator)
+            VideoGenerationView(
+                initialPrompt: promptToGenerate,
+                onGenerationSuccess: {
+                    showGenerationSuccess = true
+                }
+            )
+            .environmentObject(playerCoordinator)
+        }
+        .alert("Generation Queued", isPresented: $showGenerationSuccess) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Your video has been queued for generation. Check the Library tab to monitor its progress.")
         }
     }
 }

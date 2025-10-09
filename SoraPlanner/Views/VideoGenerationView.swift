@@ -14,14 +14,25 @@ struct VideoGenerationView: View {
     @Environment(\.dismiss) private var dismiss
 
     let initialPrompt: String?
+    let onGenerationSuccess: () -> Void
 
     var body: some View {
         VStack(spacing: 20) {
-            // App Title
-            Text("Video Generation")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .padding(.top)
+            // Header with Cancel button
+            HStack {
+                Text("Video Generation")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+
+                Spacer()
+
+                Button("Cancel") {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+            }
+            .padding(.horizontal)
+            .padding(.top)
 
             // Prompt Input Section
             VStack(alignment: .leading, spacing: 8) {
@@ -80,7 +91,12 @@ struct VideoGenerationView: View {
             // Generate Button
             Button(action: {
                 Task {
-                    await viewModel.generateVideo()
+                    let success = await viewModel.generateVideo()
+                    if success {
+                        // Dismiss immediately and notify parent
+                        dismiss()
+                        onGenerationSuccess()
+                    }
                 }
             }) {
                 HStack {
@@ -134,27 +150,21 @@ struct VideoGenerationView: View {
         }
         .frame(minWidth: 600, minHeight: 700)
         .onAppear {
+            print("DEBUG: VideoGenerationView.onAppear - initialPrompt: '\(initialPrompt ?? "nil")'")
             // Set initial prompt if provided
-            if let prompt = initialPrompt {
+            if let prompt = initialPrompt, !prompt.isEmpty {
+                print("DEBUG: Setting viewModel.prompt to: '\(prompt)'")
                 viewModel.prompt = prompt
+            } else {
+                print("DEBUG: Not setting prompt - initialPrompt is nil or empty")
             }
             // Retry API service initialization in case user just added API key in Settings
             viewModel.retryAPIServiceInitialization()
-        }
-        .onChange(of: viewModel.successMessage) { oldValue, newValue in
-            // Dismiss modal after successful generation
-            if newValue != nil {
-                Task {
-                    // Wait for success message to be shown
-                    try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-                    dismiss()
-                }
-            }
         }
     }
 }
 
 #Preview {
-    VideoGenerationView(initialPrompt: nil)
+    VideoGenerationView(initialPrompt: nil, onGenerationSuccess: {})
         .environmentObject(VideoPlayerCoordinator())
 }
