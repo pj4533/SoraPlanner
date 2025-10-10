@@ -14,7 +14,10 @@ SoraPlanner provides an intuitive, native macOS interface for working with OpenA
 
 - **Prompt Library Management**: Create, edit, and organize reusable video generation prompts with persistent storage
 - **Modal Video Generation**: Launch video generation from prompts or create new videos on-demand
-- **Flexible Duration Options**: Choose between 4, 8, or 12-second videos with transparent pricing
+- **Model Selection**: Choose between Sora-2 (0.10/s) or Sora-2 Pro (0.30-0.50/s) models with different quality levels
+- **Flexible Duration Options**: Choose between 4, 8, or 12-second videos with real-time cost estimation
+- **Configurable Output Resolution**: Select from multiple resolution presets including standard (720x1280, 1280x720) and high-resolution options (1024x1792, 1792x1024) for Pro model
+- **Advanced Options UI**: Collapsible advanced settings section for model and resolution configuration
 - **Real-Time Progress Tracking**: Monitor your video generation with live status updates
 - **Video Library Management**: View all your generated videos with detailed metadata
 - **Integrated Video Playback**: Watch your videos directly within the app with seamless looping
@@ -61,6 +64,9 @@ SoraPlanner provides an intuitive, native macOS interface for working with OpenA
 
    Note: Keychain storage takes precedence if both methods are configured.
 
----
+**Pricing**: Video generation costs vary by model:
+- Sora-2: $0.10 per second
+- Sora-2 Pro (standard resolutions): $0.30 per second
+- Sora-2 Pro (high-resolution): $0.50 per second
 
-**Note**: Video generation costs $0.10 per second according to OpenAI's pricing.
+Real-time cost estimates are displayed in the generation interface based on your selected options.

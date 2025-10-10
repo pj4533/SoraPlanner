@@ -25,7 +25,14 @@ This application provides a native macOS interface for creating, tracking, and m
 - Modal presentation launched from Prompt Library
 - Interactive prompt editor with multi-line text support
 - Optional pre-filled prompt from library or empty state
-- Duration selection (4, 8, or 12 seconds) with pricing information
+- Duration selection (4, 8, or 12 seconds) with real-time cost estimation
+- Model selection between Sora-2 ($0.10/s) and Sora-2 Pro ($0.30-0.50/s)
+- Configurable output resolution with model-specific options:
+  - Standard resolutions: 720x1280 (Portrait), 1280x720 (Landscape)
+  - High-resolution (Sora-2 Pro only): 1024x1792 (Portrait), 1792x1024 (Landscape)
+- Collapsible "Advanced Options" section for model and resolution configuration
+- Dynamic cost calculation based on model, resolution, and duration
+- Resolution validation when switching between models
 - Real-time generation status monitoring with progress indicators
 - Animated visual feedback during video processing
 - Integrated error handling and user-friendly error messages
@@ -79,13 +86,22 @@ This application provides a native macOS interface for creating, tracking, and m
 The application integrates with OpenAI's Video API through a dedicated service layer:
 
 **Supported Endpoints:**
-- `POST /v1/videos` - Create video generation jobs
+- `POST /v1/videos` - Create video generation jobs with model, resolution, and duration parameters
 - `GET /v1/videos` - List video jobs with pagination
 - `GET /v1/videos/{video_id}` - Retrieve video job details and status
 - `GET /v1/videos/{video_id}/content` - Download video content (MP4)
 
+**Supported Models:**
+- `sora-2` - Standard quality model ($0.10 per second)
+- `sora-2-pro` - Professional quality model ($0.30-0.50 per second)
+
+**Supported Resolutions:**
+- Standard: `720x1280` (Portrait), `1280x720` (Landscape)
+- High-Resolution (Pro only): `1024x1792` (Portrait), `1792x1024` (Landscape)
+
 **API Features:**
 - Bearer token authentication via secure keychain storage (with environment variable fallback)
+- Dynamic parameter validation (resolution based on model selection)
 - Comprehensive error handling with typed error cases
 - Automatic retry logic through polling mechanism
 - Detailed request/response logging
@@ -123,6 +139,7 @@ SoraPlanner/
 SoraPlannerTests/                  # Unit test target
 SoraPlannerUITests/                # UI test target
 internal_docs/                     # API documentation and reference materials
+ARCHITECTURE_REVIEW.md             # Comprehensive architectural analysis and improvement roadmap
 ```
 
 ## Architecture Patterns
@@ -145,6 +162,14 @@ internal_docs/                     # API documentation and reference materials
 - Prevents state issues when presenting multiple modals sequentially
 - Modal dismissal triggers success callbacks to parent view
 - Enables clean separation between prompt management and video generation flows
+
+### Progressive Disclosure UI Pattern
+- "Advanced Options" section uses disclosure pattern to reduce UI complexity
+- Primary controls (prompt, duration, cost) always visible
+- Secondary controls (model, resolution) hidden by default in collapsible section
+- Smooth animation transitions using SwiftUI's `withAnimation`
+- Custom button with expanded tap area for better usability
+- State-based chevron indicator (right arrow when collapsed, down arrow when expanded)
 
 ### Coordinator Pattern
 - `VideoPlayerCoordinator` manages shared video playback state across tabs
@@ -237,6 +262,18 @@ The application checks keychain first, then falls back to environment variable. 
 - IMPORTANT: Do not modify `/internal_docs/openai_video_api_sora2.md` - this is our only reference copy of the Sora-2 API documentation which is not easily available online.
 - Refer to this file for API contract details, endpoint specifications, and response formats
 
+### Architecture Documentation
+- Review `ARCHITECTURE_REVIEW.md` for comprehensive architectural analysis
+- Includes critical issues, improvement recommendations, and implementation roadmap
+- Reference before making major architectural changes
+
+### README.md Guidelines
+- Keep README.md minimal and concise
+- Focus only on: overview, features list, setup instructions, and pricing
+- Do NOT add extensive documentation sections or links to other docs
+- All technical details, architecture, and development guidelines belong in CLAUDE.md only
+- README should be a quick-start guide, not comprehensive documentation
+
 ## Security
 
 ### Credential Storage
@@ -259,6 +296,8 @@ The application checks keychain first, then falls back to environment variable. 
 - Polling interval fixed at 2 seconds (not configurable)
 - No support for video remixing features (API supports but not yet implemented)
 - Prompts stored in UserDefaults (lightweight, but no iCloud sync or backup)
+- High-resolution output (1024x1792, 1792x1024) only available with Sora-2 Pro model
+- Model and resolution selection requires manual user configuration (no automatic optimization)
 
 ## Future Enhancement Opportunities
 
