@@ -69,6 +69,39 @@ class VideoLibraryViewModel: ObservableObject {
             videos = fetchedVideos
             SoraPlannerLoggers.ui.info("Loaded \(fetchedVideos.count) videos")
 
+            // Make individual status calls for failed videos to compare data
+            let failedVideos = fetchedVideos.filter { $0.status == .failed }
+            if !failedVideos.isEmpty {
+                SoraPlannerLoggers.api.info("Making individual status calls for \(failedVideos.count) failed video(s) to compare with list endpoint")
+                for video in failedVideos {
+                    do {
+                        SoraPlannerLoggers.api.info("Fetching individual status for failed video: \(video.id)")
+                        _ = try await service.getVideoStatus(videoId: video.id)
+                        // The raw JSON logging happens in getVideoStatus
+                    } catch {
+                        SoraPlannerLoggers.api.error("Failed to get individual status for video \(video.id): \(error.localizedDescription)")
+                    }
+                }
+            }
+
+            // Make individual status calls for long-queued videos (>5 minutes)
+            let currentTime = Int(Date().timeIntervalSince1970)
+            let longQueuedVideos = fetchedVideos.filter { video in
+                video.status == .queued && (currentTime - video.createdAt) > 300
+            }
+            if !longQueuedVideos.isEmpty {
+                SoraPlannerLoggers.api.info("Making individual status calls for \(longQueuedVideos.count) long-queued video(s) to compare with list endpoint")
+                for video in longQueuedVideos {
+                    do {
+                        SoraPlannerLoggers.api.info("Fetching individual status for long-queued video: \(video.id)")
+                        _ = try await service.getVideoStatus(videoId: video.id)
+                        // The raw JSON logging happens in getVideoStatus
+                    } catch {
+                        SoraPlannerLoggers.api.error("Failed to get individual status for video \(video.id): \(error.localizedDescription)")
+                    }
+                }
+            }
+
         } catch {
             SoraPlannerLoggers.ui.error("Failed to load videos: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
