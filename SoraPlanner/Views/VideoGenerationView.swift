@@ -12,6 +12,7 @@ struct VideoGenerationView: View {
     @StateObject private var viewModel: VideoGenerationViewModel
     @EnvironmentObject var playerCoordinator: VideoPlayerCoordinator
     @Environment(\.dismiss) private var dismiss
+    @State private var showAdvancedOptions = false
 
     let onGenerationSuccess: () -> Void
 
@@ -61,81 +62,20 @@ struct VideoGenerationView: View {
             }
             .padding(.horizontal)
 
-            // Model Selection Section
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Model")
-                    .font(.headline)
-
-                Picker("Model", selection: $viewModel.model) {
-                    Text("Sora-2 ($0.10/s)").tag("sora-2")
-                    Text("Sora-2 Pro ($0.30/s - $0.50/s)").tag("sora-2-pro")
-                }
-                .pickerStyle(.segmented)
-                .disabled(viewModel.isGenerating)
-                .onChange(of: viewModel.model) { _, _ in
-                    viewModel.validateResolution()
-                }
-
-                Text("Select the AI model for video generation")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal)
-
-            // Resolution Selection Section
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Output Resolution")
-                    .font(.headline)
-
-                Picker("Resolution", selection: $viewModel.resolution) {
-                    Text("720x1280 (Portrait)").tag("720x1280")
-                    Text("1280x720 (Landscape)").tag("1280x720")
-
-                    if viewModel.model == "sora-2-pro" {
-                        Text("1024x1792 (High-Res Portrait)").tag("1024x1792")
-                        Text("1792x1024 (High-Res Landscape)").tag("1792x1024")
-                    } else {
-                        Text("1024x1792 (Pro only)").tag("1024x1792").disabled(true)
-                        Text("1792x1024 (Pro only)").tag("1792x1024").disabled(true)
-                    }
-                }
-                .disabled(viewModel.isGenerating)
-
-                HStack(spacing: 4) {
-                    Text("Higher resolutions (1024x1792, 1792x1024) require Sora-2 Pro")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    if viewModel.isHighResProResolution {
-                        Text("• $0.50/s")
-                            .font(.caption)
-                            .foregroundColor(.orange)
-                            .fontWeight(.semibold)
-                    }
-                }
-            }
-            .padding(.horizontal)
-
             // Duration Picker Section
             VStack(alignment: .leading, spacing: 8) {
                 Text("Video Duration")
                     .font(.headline)
 
-                HStack(spacing: 16) {
-                    Picker("Duration", selection: $viewModel.duration) {
-                        Text("4 seconds").tag(4)
-                        Text("8 seconds").tag(8)
-                        Text("12 seconds").tag(12)
-                    }
-                    .pickerStyle(.segmented)
-                    .disabled(viewModel.isGenerating)
-
-                    Text("\(viewModel.duration)s")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .frame(width: 35)
+                Picker("Duration", selection: $viewModel.duration) {
+                    Text("4 seconds").tag(4)
+                    Text("8 seconds").tag(8)
+                    Text("12 seconds").tag(12)
                 }
+                .pickerStyle(.segmented)
+                .disabled(viewModel.isGenerating)
 
-                HStack(spacing: 4) {
+                HStack {
                     Text("Select the length of your generated video")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -143,9 +83,89 @@ struct VideoGenerationView: View {
                     Spacer()
 
                     Text("Estimated: $\(String(format: "%.2f", viewModel.estimatedCost))")
-                        .font(.caption)
+                        .font(.callout)
                         .foregroundColor(.accentColor)
                         .fontWeight(.semibold)
+                }
+            }
+            .padding(.horizontal)
+
+            // Advanced Options Disclosure
+            VStack(alignment: .leading, spacing: 0) {
+                // Custom disclosure header with larger tap area
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showAdvancedOptions.toggle()
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: showAdvancedOptions ? "chevron.down" : "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("Advanced Options")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                // Expandable content
+                if showAdvancedOptions {
+                    VStack(spacing: 16) {
+                        // Model Selection
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Model")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+
+                            Picker("Model", selection: $viewModel.model) {
+                                Text("Sora-2 ($0.10/s)").tag("sora-2")
+                                Text("Sora-2 Pro ($0.30/s - $0.50/s)").tag("sora-2-pro")
+                            }
+                            .pickerStyle(.segmented)
+                            .disabled(viewModel.isGenerating)
+                            .onChange(of: viewModel.model) { _, _ in
+                                viewModel.validateResolution()
+                            }
+                        }
+
+                        Divider()
+
+                        // Resolution Selection
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Output Resolution")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+
+                            Picker("Resolution", selection: $viewModel.resolution) {
+                                Text("720x1280 (Portrait)").tag("720x1280")
+                                Text("1280x720 (Landscape)").tag("1280x720")
+
+                                if viewModel.model == "sora-2-pro" {
+                                    Text("1024x1792 (High-Res Portrait)").tag("1024x1792")
+                                    Text("1792x1024 (High-Res Landscape)").tag("1792x1024")
+                                } else {
+                                    Text("1024x1792 (Pro only)").tag("1024x1792").disabled(true)
+                                    Text("1792x1024 (Pro only)").tag("1792x1024").disabled(true)
+                                }
+                            }
+                            .disabled(viewModel.isGenerating)
+
+                            if viewModel.isHighResProResolution {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "info.circle.fill")
+                                        .foregroundColor(.orange)
+                                        .font(.caption)
+                                    Text("High-resolution output: $0.50 per second")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.top, 12)
                 }
             }
             .padding(.horizontal)
@@ -210,7 +230,7 @@ struct VideoGenerationView: View {
 
             Spacer()
         }
-        .frame(minWidth: 600, minHeight: 700)
+        .frame(minWidth: 600, minHeight: 600)
         .onAppear {
             // Retry API service initialization in case user just added API key in Settings
             viewModel.retryAPIServiceInitialization()
