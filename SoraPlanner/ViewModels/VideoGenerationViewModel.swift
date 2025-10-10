@@ -15,6 +15,8 @@ class VideoGenerationViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var prompt: String = ""
     @Published var duration: Int = 4 // Duration in seconds (default 4)
+    @Published var model: String = "sora-2" // Model selection: sora-2 or sora-2-pro
+    @Published var resolution: String = "720x1280" // Output resolution
     @Published var isGenerating: Bool = false
     @Published var errorMessage: String?
     @Published var successMessage: String?
@@ -25,6 +27,36 @@ class VideoGenerationViewModel: ObservableObject {
     // MARK: - Computed Properties
     var canGenerate: Bool {
         !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isGenerating
+    }
+
+    /// Available resolutions based on selected model
+    var availableResolutions: [String] {
+        var resolutions = ["720x1280", "1280x720"]
+        if model == "sora-2-pro" {
+            resolutions.append(contentsOf: ["1024x1792", "1792x1024"])
+        }
+        return resolutions
+    }
+
+    /// Check if current resolution is a high-res pro resolution
+    var isHighResProResolution: Bool {
+        model == "sora-2-pro" && (resolution == "1024x1792" || resolution == "1792x1024")
+    }
+
+    /// Price per second based on model and resolution
+    var pricePerSecond: Double {
+        if model == "sora-2" {
+            return 0.10
+        } else if isHighResProResolution {
+            return 0.50
+        } else {
+            return 0.30
+        }
+    }
+
+    /// Total estimated cost
+    var estimatedCost: Double {
+        pricePerSecond * Double(duration)
     }
 
     // MARK: - Initialization
@@ -73,7 +105,7 @@ class VideoGenerationViewModel: ObservableObject {
             return false
         }
 
-        SoraPlannerLoggers.ui.info("Starting video generation")
+        SoraPlannerLoggers.ui.info("Starting video generation with model: \(self.model), resolution: \(self.resolution)")
 
         isGenerating = true
         errorMessage = nil
@@ -84,14 +116,21 @@ class VideoGenerationViewModel: ObservableObject {
                 throw VideoAPIError.missingAPIKey
             }
 
-            // Create video job
-            let job = try await service.createVideo(prompt: prompt, seconds: String(duration))
+            // Create video job with model and resolution
+            let job = try await service.createVideo(
+                prompt: prompt,
+                model: model,
+                seconds: String(duration),
+                size: resolution
+            )
 
-            SoraPlannerLoggers.ui.info("Video job created: \(job.id)")
+            SoraPlannerLoggers.ui.info("Video job created: \(job.id) with cost: $\(String(format: "%.2f", self.estimatedCost))")
 
             // Reset the form
             prompt = ""
             duration = 4
+            model = "sora-2"
+            resolution = "720x1280"
             successMessage = nil
             isGenerating = false
 
@@ -102,6 +141,15 @@ class VideoGenerationViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             isGenerating = false
             return false
+        }
+    }
+
+    /// Validate and adjust resolution when model changes
+    func validateResolution() {
+        // If switching to sora-2 and current resolution is a pro-only resolution, reset to default
+        if model == "sora-2" && (resolution == "1024x1792" || resolution == "1792x1024") {
+            resolution = "720x1280"
+            SoraPlannerLoggers.ui.debug("Resolution reset to 720x1280 (pro resolution not available for sora-2)")
         }
     }
 

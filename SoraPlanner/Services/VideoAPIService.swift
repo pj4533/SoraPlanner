@@ -57,8 +57,8 @@ class VideoAPIService {
     }
 
     /// Create a new video generation job
-    func createVideo(prompt: String, seconds: String? = nil) async throws -> VideoJob {
-        SoraPlannerLoggers.api.info("Creating video job with prompt: \(prompt)")
+    func createVideo(prompt: String, model: String = "sora-2", seconds: String? = nil, size: String? = nil) async throws -> VideoJob {
+        SoraPlannerLoggers.api.info("Creating video job with model: \(model), size: \(size ?? "default"), prompt: \(prompt.prefix(50))...")
 
         guard let url = URL(string: baseURL) else {
             SoraPlannerLoggers.api.error("Invalid base URL")
@@ -70,7 +70,7 @@ class VideoAPIService {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let requestBody = CreateVideoRequest(prompt: prompt, seconds: seconds)
+        let requestBody = CreateVideoRequest(prompt: prompt, model: model, seconds: seconds, size: size)
         request.httpBody = try JSONEncoder().encode(requestBody)
 
         let (data, response) = try await URLSession.shared.data(for: request)

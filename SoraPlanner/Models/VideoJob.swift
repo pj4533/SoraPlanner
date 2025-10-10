@@ -57,10 +57,12 @@ struct CreateVideoRequest: Codable {
     let model: String
     let prompt: String
     let seconds: String?
+    let size: String?
 
-    init(prompt: String, seconds: String? = nil) {
-        self.model = "sora-2"
+    init(prompt: String, model: String = "sora-2", seconds: String? = nil, size: String? = nil) {
+        self.model = model
         self.prompt = prompt
         self.seconds = seconds
+        self.size = size
     }
 }

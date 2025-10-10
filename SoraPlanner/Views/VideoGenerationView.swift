@@ -61,6 +61,60 @@ struct VideoGenerationView: View {
             }
             .padding(.horizontal)
 
+            // Model Selection Section
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Model")
+                    .font(.headline)
+
+                Picker("Model", selection: $viewModel.model) {
+                    Text("Sora-2 ($0.10/s)").tag("sora-2")
+                    Text("Sora-2 Pro ($0.30/s - $0.50/s)").tag("sora-2-pro")
+                }
+                .pickerStyle(.segmented)
+                .disabled(viewModel.isGenerating)
+                .onChange(of: viewModel.model) { _, _ in
+                    viewModel.validateResolution()
+                }
+
+                Text("Select the AI model for video generation")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal)
+
+            // Resolution Selection Section
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Output Resolution")
+                    .font(.headline)
+
+                Picker("Resolution", selection: $viewModel.resolution) {
+                    Text("720x1280 (Portrait)").tag("720x1280")
+                    Text("1280x720 (Landscape)").tag("1280x720")
+
+                    if viewModel.model == "sora-2-pro" {
+                        Text("1024x1792 (High-Res Portrait)").tag("1024x1792")
+                        Text("1792x1024 (High-Res Landscape)").tag("1792x1024")
+                    } else {
+                        Text("1024x1792 (Pro only)").tag("1024x1792").disabled(true)
+                        Text("1792x1024 (Pro only)").tag("1792x1024").disabled(true)
+                    }
+                }
+                .disabled(viewModel.isGenerating)
+
+                HStack(spacing: 4) {
+                    Text("Higher resolutions (1024x1792, 1792x1024) require Sora-2 Pro")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    if viewModel.isHighResProResolution {
+                        Text("• $0.50/s")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                            .fontWeight(.semibold)
+                    }
+                }
+            }
+            .padding(.horizontal)
+
             // Duration Picker Section
             VStack(alignment: .leading, spacing: 8) {
                 Text("Video Duration")
@@ -81,14 +135,17 @@ struct VideoGenerationView: View {
                         .frame(width: 35)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
                     Text("Select the length of your generated video")
                         .font(.caption)
                         .foregroundColor(.secondary)
 
-                    Text("Sora-2 model • $0.10 per second")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                    Spacer()
+
+                    Text("Estimated: $\(String(format: "%.2f", viewModel.estimatedCost))")
+                        .font(.caption)
+                        .foregroundColor(.accentColor)
+                        .fontWeight(.semibold)
                 }
             }
             .padding(.horizontal)
