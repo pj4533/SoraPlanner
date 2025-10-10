@@ -146,12 +146,15 @@ struct VideoGenerationView: View {
                                 if viewModel.model == "sora-2-pro" {
                                     Text("1024x1792 (High-Res Portrait)").tag("1024x1792")
                                     Text("1792x1024 (High-Res Landscape)").tag("1792x1024")
-                                } else {
-                                    Text("1024x1792 (Pro only)").tag("1024x1792").disabled(true)
-                                    Text("1792x1024 (Pro only)").tag("1792x1024").disabled(true)
                                 }
                             }
                             .disabled(viewModel.isGenerating)
+
+                            if viewModel.model == "sora-2" {
+                                Text("Higher resolutions require Sora-2 Pro")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
 
                             if viewModel.isHighResProResolution {
                                 HStack(spacing: 4) {
