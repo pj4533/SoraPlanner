@@ -13,32 +13,7 @@ struct VideoPlayerView: View {
     @EnvironmentObject var coordinator: VideoPlayerCoordinator
 
     var body: some View {
-        VStack(spacing: 20) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Video Player")
-                        .font(.title2)
-                        .fontWeight(.bold)
-
-                    Text("ID: \(video.id)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                Spacer()
-
-                Button(action: {
-                    coordinator.dismiss()
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding()
-
+        ZStack {
             // Content
             if coordinator.isLoading {
                 VStack(spacing: 16) {
@@ -70,46 +45,63 @@ struct VideoPlayerView: View {
             } else if let videoURL = coordinator.videoURL {
                 // Video Player - Using custom looping player for seamless playback
                 LoopingVideoPlayerView(url: videoURL)
-                    .frame(minHeight: 400)
-                    .cornerRadius(12)
-                    .padding()
-
-                // Video Info
-                VStack(alignment: .leading, spacing: 8) {
-                    if let size = video.size {
-                        HStack {
-                            Image(systemName: "rectangle.expand.vertical")
-                            Text("Resolution: \(size)")
-                        }
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    }
-
-                    if let seconds = video.seconds {
-                        HStack {
-                            Image(systemName: "timer")
-                            Text("Duration: \(seconds) seconds")
-                        }
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    }
-
-                    if let quality = video.quality {
-                        HStack {
-                            Image(systemName: "sparkles")
-                            Text("Quality: \(quality)")
-                        }
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.bottom)
+                    .cornerRadius(8)
             }
 
-            Spacer()
+            // Overlay close button and metadata
+            VStack {
+                // Top bar with close button
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        coordinator.dismiss()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title)
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                    }
+                    .buttonStyle(.plain)
+                    .padding()
+                }
+
+                Spacer()
+
+                // Bottom metadata overlay (only shown when video is playing)
+                if coordinator.videoURL != nil {
+                    HStack(spacing: 16) {
+                        if let size = video.size {
+                            HStack(spacing: 4) {
+                                Image(systemName: "rectangle.expand.vertical")
+                                Text(size)
+                            }
+                        }
+
+                        if let seconds = video.seconds {
+                            HStack(spacing: 4) {
+                                Image(systemName: "timer")
+                                Text("\(seconds)s")
+                            }
+                        }
+
+                        if let quality = video.quality {
+                            HStack(spacing: 4) {
+                                Image(systemName: "sparkles")
+                                Text(quality)
+                            }
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.6))
+                    .cornerRadius(8)
+                    .padding(.bottom, 16)
+                }
+            }
         }
-        .frame(minWidth: 700, minHeight: 600)
+        .frame(minWidth: 900, minHeight: 700)
         .task {
             // Auto-load video when view appears
             if coordinator.videoURL == nil && !coordinator.isLoading {
