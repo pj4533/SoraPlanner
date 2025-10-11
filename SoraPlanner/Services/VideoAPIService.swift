@@ -34,7 +34,6 @@ enum VideoAPIError: LocalizedError {
     }
 }
 
-@MainActor
 class VideoAPIService {
     private let baseURL = "https://api.openai.com/v1/videos"
     private let apiKey: String
