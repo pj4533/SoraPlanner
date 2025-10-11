@@ -22,7 +22,7 @@ class VideoGenerationViewModel: ObservableObject {
     @Published var successMessage: String?
 
     // MARK: - Private Properties
-    private var apiService: VideoAPIService?
+    private let service: VideoAPIService
 
     // MARK: - Computed Properties
     var canGenerate: Bool {
@@ -60,8 +60,8 @@ class VideoGenerationViewModel: ObservableObject {
     }
 
     // MARK: - Initialization
-    init(initialPrompt: String? = nil) {
-        SoraPlannerLoggers.ui.info("VideoGenerationViewModel initialized")
+    init(service: VideoAPIService, initialPrompt: String? = nil) {
+        self.service = service
 
         // Set initial prompt if provided
         if let prompt = initialPrompt, !prompt.isEmpty {
@@ -69,33 +69,10 @@ class VideoGenerationViewModel: ObservableObject {
             SoraPlannerLoggers.ui.debug("Initial prompt set: \(prompt.prefix(50))...")
         }
 
-        do {
-            self.apiService = try VideoAPIService()
-        } catch {
-            SoraPlannerLoggers.ui.error("Failed to initialize API service: \(error.localizedDescription)")
-            self.errorMessage = error.localizedDescription
-        }
+        SoraPlannerLoggers.ui.info("VideoGenerationViewModel initialized")
     }
 
     // MARK: - Public Methods
-
-    /// Retry initializing the API service (e.g., after user adds API key)
-    func retryAPIServiceInitialization() {
-        guard apiService == nil else {
-            // Already initialized
-            return
-        }
-
-        SoraPlannerLoggers.ui.info("Retrying API service initialization")
-        do {
-            self.apiService = try VideoAPIService()
-            self.errorMessage = nil
-            SoraPlannerLoggers.ui.info("API service initialization successful")
-        } catch {
-            SoraPlannerLoggers.ui.error("Failed to initialize API service: \(error.localizedDescription)")
-            self.errorMessage = error.localizedDescription
-        }
-    }
 
     /// Start video generation process
     /// Returns true if generation was successful, false otherwise
@@ -112,10 +89,6 @@ class VideoGenerationViewModel: ObservableObject {
         successMessage = nil
 
         do {
-            guard let service = apiService else {
-                throw VideoAPIError.missingAPIKey
-            }
-
             // Create video job with model and resolution
             let job = try await service.createVideo(
                 prompt: prompt,

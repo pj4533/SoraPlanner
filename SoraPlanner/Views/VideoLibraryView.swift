@@ -8,8 +8,12 @@
 import SwiftUI
 
 struct VideoLibraryView: View {
-    @StateObject private var viewModel = VideoLibraryViewModel()
+    @StateObject private var viewModel: VideoLibraryViewModel
     @EnvironmentObject var playerCoordinator: VideoPlayerCoordinator
+
+    init(apiService: VideoAPIService) {
+        self._viewModel = StateObject(wrappedValue: VideoLibraryViewModel(service: apiService))
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -97,8 +101,6 @@ struct VideoLibraryView: View {
         }
         .frame(minWidth: 600, minHeight: 700)
         .task {
-            // Retry API service initialization in case user just added API key in Settings
-            viewModel.retryAPIServiceInitialization()
             await viewModel.loadVideos()
         }
         .onDisappear {
@@ -301,7 +303,8 @@ struct VideoLibraryRow: View {
     }
 }
 
-#Preview {
-    VideoLibraryView()
-        .environmentObject(VideoPlayerCoordinator())
-}
+// Preview disabled - requires valid API service
+// #Preview {
+//     VideoLibraryView(apiService: <#VideoAPIService#>)
+//         .environmentObject(VideoPlayerCoordinator(service: <#VideoAPIService#>))
+// }
