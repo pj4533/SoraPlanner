@@ -82,9 +82,9 @@ struct PromptLibraryView: View {
                 // Prompt List
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(viewModel.prompts) { prompt in
+                        ForEach($viewModel.prompts) { $prompt in
                             PromptRow(
-                                prompt: prompt,
+                                prompt: $prompt,
                                 viewModel: viewModel,
                                 onGenerate: {
                                     onGeneratePrompt(prompt.text)
@@ -101,32 +101,24 @@ struct PromptLibraryView: View {
 }
 
 struct PromptRow: View {
-    let prompt: Prompt
+    @Binding var prompt: Prompt
     @ObservedObject var viewModel: PromptLibraryViewModel
     let onGenerate: () -> Void
 
-    @State private var editedPrompt: Prompt
     @State private var showDeleteConfirmation = false
 
     // Character limit constant
     private let maxCharacters = 2000
 
-    init(prompt: Prompt, viewModel: PromptLibraryViewModel, onGenerate: @escaping () -> Void) {
-        self.prompt = prompt
-        self.viewModel = viewModel
-        self.onGenerate = onGenerate
-        self._editedPrompt = State(initialValue: prompt)
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Title Field
             HStack {
-                TextField("Prompt Title", text: $editedPrompt.title)
+                TextField("Prompt Title", text: $prompt.title)
                     .textFieldStyle(.plain)
                     .font(.headline)
-                    .onChange(of: editedPrompt.title) { oldValue, newValue in
-                        viewModel.updatePrompt(editedPrompt)
+                    .onChange(of: prompt.title) { oldValue, newValue in
+                        viewModel.updatePrompt(prompt)
                     }
 
                 Spacer()
@@ -144,26 +136,26 @@ struct PromptRow: View {
 
             // Prompt Text Area
             VStack(alignment: .leading, spacing: 4) {
-                TextEditor(text: $editedPrompt.text)
+                TextEditor(text: $prompt.text)
                     .font(.body)
                     .frame(minHeight: 80, maxHeight: 120)
                     .padding(8)
                     .background(Color(NSColor.textBackgroundColor))
                     .cornerRadius(6)
-                    .onChange(of: editedPrompt.text) { oldValue, newValue in
+                    .onChange(of: prompt.text) { oldValue, newValue in
                         // Enforce character limit
                         if newValue.count > maxCharacters {
-                            editedPrompt.text = String(newValue.prefix(maxCharacters))
+                            prompt.text = String(newValue.prefix(maxCharacters))
                         }
-                        viewModel.updatePrompt(editedPrompt)
+                        viewModel.updatePrompt(prompt)
                     }
 
                 // Character count
                 HStack {
                     Spacer()
-                    Text("\(editedPrompt.text.count) / \(maxCharacters)")
+                    Text("\(prompt.text.count) / \(maxCharacters)")
                         .font(.caption2)
-                        .foregroundColor(editedPrompt.text.count >= maxCharacters ? .red : .secondary)
+                        .foregroundColor(prompt.text.count >= maxCharacters ? .red : .secondary)
                 }
             }
 
@@ -180,19 +172,19 @@ struct PromptRow: View {
                     .font(.caption)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(editedPrompt.text.isEmpty)
-                .help(editedPrompt.text.isEmpty ? "Add text to generate video" : "Generate video with this prompt")
+                .disabled(prompt.text.isEmpty)
+                .help(prompt.text.isEmpty ? "Add text to generate video" : "Generate video with this prompt")
 
                 Spacer()
 
                 // Metadata
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text("Created: \(formattedDate(editedPrompt.createdAt))")
+                    Text("Created: \(formattedDate(prompt.createdAt))")
                         .font(.caption2)
                         .foregroundColor(.secondary)
 
-                    if editedPrompt.modifiedAt != editedPrompt.createdAt {
-                        Text("Modified: \(formattedDate(editedPrompt.modifiedAt))")
+                    if prompt.modifiedAt != prompt.createdAt {
+                        Text("Modified: \(formattedDate(prompt.modifiedAt))")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }
