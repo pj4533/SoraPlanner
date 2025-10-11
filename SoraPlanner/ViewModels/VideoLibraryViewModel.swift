@@ -20,7 +20,7 @@ class VideoLibraryViewModel: ObservableObject {
     @Published var savingVideoIds: Set<String> = []
 
     // MARK: - Private Properties
-    private var apiService: VideoAPIService?
+    private let service: VideoAPIService
 
     // Polling infrastructure
     private var pollingTasks: [String: Task<Void, Never>] = [:]
@@ -28,35 +28,12 @@ class VideoLibraryViewModel: ObservableObject {
     private let maxConcurrentPolls = 10
 
     // MARK: - Initialization
-    init() {
+    init(service: VideoAPIService) {
+        self.service = service
         SoraPlannerLoggers.ui.info("VideoLibraryViewModel initialized")
-        do {
-            self.apiService = try VideoAPIService()
-        } catch {
-            SoraPlannerLoggers.ui.error("Failed to initialize API service: \(error.localizedDescription)")
-            self.errorMessage = error.localizedDescription
-        }
     }
 
     // MARK: - Public Methods
-
-    /// Retry initializing the API service (e.g., after user adds API key)
-    func retryAPIServiceInitialization() {
-        guard apiService == nil else {
-            // Already initialized
-            return
-        }
-
-        SoraPlannerLoggers.ui.info("Retrying API service initialization")
-        do {
-            self.apiService = try VideoAPIService()
-            self.errorMessage = nil
-            SoraPlannerLoggers.ui.info("API service initialization successful")
-        } catch {
-            SoraPlannerLoggers.ui.error("Failed to initialize API service: \(error.localizedDescription)")
-            self.errorMessage = error.localizedDescription
-        }
-    }
 
     /// Load all videos from the API
     func loadVideos() async {
@@ -66,10 +43,6 @@ class VideoLibraryViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            guard let service = apiService else {
-                throw VideoAPIError.missingAPIKey
-            }
-
             let fetchedVideos = try await service.listVideos()
             videos = fetchedVideos
             SoraPlannerLoggers.ui.info("Loaded \(fetchedVideos.count) videos")
@@ -125,12 +98,6 @@ class VideoLibraryViewModel: ObservableObject {
 
     /// Delete a video from the library
     func deleteVideo(_ video: VideoJob) async {
-        guard let service = apiService else {
-            SoraPlannerLoggers.ui.error("Cannot delete video - API service not available")
-            errorMessage = "API service not available"
-            return
-        }
-
         SoraPlannerLoggers.ui.info("Deleting video: \(video.id)")
 
         // Mark as deleting
@@ -151,10 +118,6 @@ class VideoLibraryViewModel: ObservableObject {
 
     /// Save a video to the Photos library
     func saveToPhotos(_ video: VideoJob) async throws {
-        guard let service = apiService else {
-            throw VideoAPIError.missingAPIKey
-        }
-
         guard video.status == .completed else {
             throw NSError(
                 domain: "SoraPlanner",
@@ -257,13 +220,7 @@ class VideoLibraryViewModel: ObservableObject {
                 do {
                     try Task.checkCancellation()
 
-                    guard let service = self.apiService else {
-                        SoraPlannerLoggers.api.error("API service not available for polling video: \(videoId)")
-                        self.stopPollingForVideo(videoId)
-                        break
-                    }
-
-                    let updatedJob = try await service.getVideoStatus(videoId: videoId)
+                    let updatedJob = try await self.service.getVideoStatus(videoId: videoId)
 
                     try Task.checkCancellation()
 

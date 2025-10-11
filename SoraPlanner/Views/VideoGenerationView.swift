@@ -16,10 +16,10 @@ struct VideoGenerationView: View {
 
     let onGenerationSuccess: () -> Void
 
-    init(initialPrompt: String?, onGenerationSuccess: @escaping () -> Void) {
+    init(apiService: VideoAPIService, initialPrompt: String?, onGenerationSuccess: @escaping () -> Void) {
         self.onGenerationSuccess = onGenerationSuccess
-        // Create the view model with the initial prompt
-        self._viewModel = StateObject(wrappedValue: VideoGenerationViewModel(initialPrompt: initialPrompt))
+        // Create the view model with the injected service and initial prompt
+        self._viewModel = StateObject(wrappedValue: VideoGenerationViewModel(service: apiService, initialPrompt: initialPrompt))
     }
 
     var body: some View {
@@ -234,14 +234,11 @@ struct VideoGenerationView: View {
             Spacer()
         }
         .frame(minWidth: 600, minHeight: 600)
-        .onAppear {
-            // Retry API service initialization in case user just added API key in Settings
-            viewModel.retryAPIServiceInitialization()
-        }
     }
 }
 
-#Preview {
-    VideoGenerationView(initialPrompt: nil, onGenerationSuccess: {})
-        .environmentObject(VideoPlayerCoordinator())
-}
+// Preview disabled - requires valid API service
+// #Preview {
+//     VideoGenerationView(apiService: <#VideoAPIService#>, initialPrompt: nil, onGenerationSuccess: {})
+//         .environmentObject(VideoPlayerCoordinator(service: <#VideoAPIService#>))
+// }

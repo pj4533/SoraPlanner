@@ -19,17 +19,12 @@ class VideoPlayerCoordinator: ObservableObject {
     @Published var errorMessage: String?
 
     // MARK: - Private Properties
-    private var apiService: VideoAPIService?
+    private let service: VideoAPIService
 
     // MARK: - Initialization
-    init() {
+    init(service: VideoAPIService) {
+        self.service = service
         SoraPlannerLoggers.ui.info("VideoPlayerCoordinator initialized")
-        do {
-            self.apiService = try VideoAPIService()
-        } catch {
-            SoraPlannerLoggers.ui.error("Failed to initialize API service: \(error.localizedDescription)")
-            self.errorMessage = error.localizedDescription
-        }
     }
 
     // MARK: - Public Methods
@@ -52,10 +47,6 @@ class VideoPlayerCoordinator: ObservableObject {
         }
 
         do {
-            guard let service = apiService else {
-                throw VideoAPIError.missingAPIKey
-            }
-
             // Download video content
             SoraPlannerLoggers.video.info("Downloading video: \(video.id)")
             let localURL = try await service.downloadVideo(videoId: video.id)

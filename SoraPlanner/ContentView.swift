@@ -14,9 +14,15 @@ struct VideoGenerationRequest: Identifiable {
 }
 
 struct ContentView: View {
-    @StateObject private var playerCoordinator = VideoPlayerCoordinator()
+    let apiService: VideoAPIService
+    @StateObject private var playerCoordinator: VideoPlayerCoordinator
     @State private var generationRequest: VideoGenerationRequest?
     @State private var showGenerationSuccess = false
+
+    init(apiService: VideoAPIService) {
+        self.apiService = apiService
+        self._playerCoordinator = StateObject(wrappedValue: VideoPlayerCoordinator(service: apiService))
+    }
 
     var body: some View {
         TabView {
@@ -32,7 +38,7 @@ struct ContentView: View {
                 Label("Prompts", systemImage: "doc.text.fill")
             }
 
-            VideoLibraryView()
+            VideoLibraryView(apiService: apiService)
                 .tabItem {
                     Label("Library", systemImage: "video.stack")
                 }
@@ -50,6 +56,7 @@ struct ContentView: View {
         }
         .sheet(item: $generationRequest) { request in
             VideoGenerationView(
+                apiService: apiService,
                 initialPrompt: request.initialPrompt,
                 onGenerationSuccess: {
                     showGenerationSuccess = true
@@ -65,6 +72,7 @@ struct ContentView: View {
     }
 }
 
-#Preview {
-    ContentView()
-}
+// Preview disabled - requires valid API service
+// #Preview {
+//     ContentView(apiService: <#VideoAPIService#>)
+// }

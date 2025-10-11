@@ -9,9 +9,19 @@ import SwiftUI
 
 @main
 struct SoraPlannerApp: App {
+    @StateObject private var dependencies = AppDependencies()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if dependencies.isInitialized, let apiService = dependencies.apiService {
+                ContentView(apiService: apiService)
+                    .environmentObject(dependencies)
+            } else {
+                InitializationErrorView(
+                    error: dependencies.initializationError,
+                    onRetry: { dependencies.reinitialize() }
+                )
+            }
         }
     }
 }
