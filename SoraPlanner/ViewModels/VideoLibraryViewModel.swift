@@ -22,6 +22,11 @@ class VideoLibraryViewModel: ObservableObject {
     // MARK: - Private Properties
     private var apiService: VideoAPIService?
 
+    // Polling infrastructure
+    private var pollingTasks: [String: Task<Void, Never>] = [:]
+    private let pollingInterval: TimeInterval = 5.0
+    private let maxConcurrentPolls = 10
+
     // MARK: - Initialization
     init() {
         SoraPlannerLoggers.ui.info("VideoLibraryViewModel initialized")
@@ -108,6 +113,9 @@ class VideoLibraryViewModel: ObservableObject {
         }
 
         isLoading = false
+
+        // Start polling for active videos
+        startPollingIfNeeded()
     }
 
     /// Refresh the video list
@@ -207,6 +215,157 @@ class VideoLibraryViewModel: ObservableObject {
         }
 
         SoraPlannerLoggers.video.info("Successfully saved video \(video.id) to Photos library")
+    }
+
+    // MARK: - Polling Methods
+
+    /// Start polling for all videos in active states (queued or in_progress)
+    func startPollingIfNeeded() {
+        let activeVideos = videos.filter { video in
+            video.status == .queued || video.status == .inProgress
+        }
+
+        guard !activeVideos.isEmpty else {
+            SoraPlannerLoggers.api.debug("No active videos to poll")
+            return
+        }
+
+        // Limit concurrent polls
+        let videosToStartPolling = activeVideos.prefix(maxConcurrentPolls)
+        SoraPlannerLoggers.api.info("Starting polling for \(videosToStartPolling.count) active video(s)")
+
+        for video in videosToStartPolling {
+            // Only start polling if not already polling
+            if pollingTasks[video.id] == nil {
+                startPollingForVideo(video.id)
+            }
+        }
+    }
+
+    /// Start polling for a specific video
+    func startPollingForVideo(_ videoId: String) {
+        // Cancel existing task if any
+        pollingTasks[videoId]?.cancel()
+
+        SoraPlannerLoggers.api.info("Starting polling for video: \(videoId)")
+
+        pollingTasks[videoId] = Task { @MainActor in
+            var backoffMultiplier: TimeInterval = 1.0
+            let maxBackoff: TimeInterval = 8.0
+
+            while !Task.isCancelled {
+                do {
+                    try Task.checkCancellation()
+
+                    guard let service = self.apiService else {
+                        SoraPlannerLoggers.api.error("API service not available for polling video: \(videoId)")
+                        self.stopPollingForVideo(videoId)
+                        break
+                    }
+
+                    let updatedJob = try await service.getVideoStatus(videoId: videoId)
+
+                    try Task.checkCancellation()
+
+                    self.updateVideoStatus(videoId: videoId, newJob: updatedJob)
+
+                    // Reset backoff on success
+                    backoffMultiplier = 1.0
+
+                    // Stop if terminal state
+                    if updatedJob.status == .completed || updatedJob.status == .failed {
+                        SoraPlannerLoggers.api.info("Video \(videoId) reached terminal state: \(updatedJob.status.rawValue)")
+                        self.stopPollingForVideo(videoId)
+                        break
+                    }
+
+                    SoraPlannerLoggers.api.debug("Polling successful for \(videoId), sleeping for \(self.pollingInterval)s")
+                    try await Task.sleep(for: .seconds(self.pollingInterval))
+
+                } catch is CancellationError {
+                    SoraPlannerLoggers.api.debug("Polling cancelled for video: \(videoId)")
+                    break
+                } catch let error as VideoAPIError {
+                    switch error {
+                    case .missingAPIKey, .invalidURL:
+                        // Fatal errors - stop polling
+                        SoraPlannerLoggers.api.error("Fatal error polling video \(videoId): \(error.localizedDescription)")
+                        self.stopPollingForVideo(videoId)
+                        break
+                    case .httpError(let statusCode, _):
+                        if statusCode == 404 {
+                            // Video deleted - remove from list and stop polling
+                            SoraPlannerLoggers.api.warning("Video \(videoId) not found (404) - removing from list")
+                            self.videos.removeAll { $0.id == videoId }
+                            self.stopPollingForVideo(videoId)
+                            break
+                        } else {
+                            // Transient HTTP error - retry with backoff
+                            SoraPlannerLoggers.api.warning("HTTP error \(statusCode) polling video \(videoId) - retrying with backoff")
+                            backoffMultiplier = min(backoffMultiplier * 2, maxBackoff)
+                            try? await Task.sleep(for: .seconds(self.pollingInterval * backoffMultiplier))
+                        }
+                    case .networkError, .invalidResponse, .decodingError:
+                        // Transient errors - retry with backoff
+                        SoraPlannerLoggers.api.warning("Transient error polling video \(videoId): \(error.localizedDescription) - retrying with backoff")
+                        backoffMultiplier = min(backoffMultiplier * 2, maxBackoff)
+                        try? await Task.sleep(for: .seconds(self.pollingInterval * backoffMultiplier))
+                    }
+                } catch {
+                    // Unknown error - log and retry with backoff
+                    SoraPlannerLoggers.api.error("Unknown error polling video \(videoId): \(error.localizedDescription) - retrying with backoff")
+                    backoffMultiplier = min(backoffMultiplier * 2, maxBackoff)
+                    try? await Task.sleep(for: .seconds(self.pollingInterval * backoffMultiplier))
+                }
+            }
+
+            self.pollingTasks.removeValue(forKey: videoId)
+            SoraPlannerLoggers.api.debug("Polling task cleaned up for video: \(videoId)")
+        }
+    }
+
+    /// Stop polling for a specific video
+    func stopPollingForVideo(_ videoId: String) {
+        guard let task = pollingTasks[videoId] else {
+            return
+        }
+
+        SoraPlannerLoggers.api.info("Stopping polling for video: \(videoId)")
+        task.cancel()
+        pollingTasks.removeValue(forKey: videoId)
+    }
+
+    /// Stop all polling tasks (called when view disappears)
+    func stopAllPolling() {
+        guard !pollingTasks.isEmpty else {
+            return
+        }
+
+        SoraPlannerLoggers.api.info("Stopping all polling tasks (\(self.pollingTasks.count) active)")
+
+        for (videoId, task) in pollingTasks {
+            SoraPlannerLoggers.api.debug("Cancelling polling task for video: \(videoId)")
+            task.cancel()
+        }
+
+        pollingTasks.removeAll()
+    }
+
+    /// Update a specific video's status atomically
+    private func updateVideoStatus(videoId: String, newJob: VideoJob) {
+        guard let index = videos.firstIndex(where: { $0.id == videoId }) else {
+            SoraPlannerLoggers.api.warning("Attempted to update status for unknown video: \(videoId)")
+            return
+        }
+
+        let oldStatus = videos[index].status
+        videos[index] = newJob
+
+        if oldStatus != newJob.status {
+            SoraPlannerLoggers.api.info("Video \(videoId) status updated: \(oldStatus.rawValue) -> \(newJob.status.rawValue)")
+        } else {
+            SoraPlannerLoggers.api.debug("Video \(videoId) status unchanged: \(newJob.status.rawValue)")
+        }
     }
 
     // MARK: - Helper Methods
