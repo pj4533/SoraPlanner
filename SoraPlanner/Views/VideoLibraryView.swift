@@ -101,6 +101,9 @@ struct VideoLibraryView: View {
             viewModel.retryAPIServiceInitialization()
             await viewModel.loadVideos()
         }
+        .onDisappear {
+            viewModel.stopAllPolling()
+        }
     }
 }
 
